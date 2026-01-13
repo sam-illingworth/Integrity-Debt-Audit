@@ -67,12 +67,18 @@ if uploaded_file and expectation and email:
             """
             
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                response = model.generate_content(prompt)
-                
-                # Clean response for valid JSON
-                clean_json = response.text.replace('```json', '').replace('```', '').strip()
-                results = json.loads(clean_json)
+               try:
+    # Updated for 2026: Using the latest stable balanced model
+    model = genai.GenerativeModel('gemini-2.5-flash')
+    response = model.generate_content(prompt)
+    
+    if not response.text:
+        st.error("The AI returned an empty response. Please check your brief's content.")
+        st.stop()
+
+    # Clean response for valid JSON (strips potential markdown formatting)
+    clean_json = response.text.replace('```json', '').replace('```', '').strip()
+    results = json.loads(clean_json)
                 
                 valid_scores = [v['score'] for v in results.values() if isinstance(v['score'], int)]
                 total = sum(valid_scores)
@@ -102,4 +108,5 @@ if uploaded_file and expectation and email:
                 st.markdown("High Integrity Debt threatens institutional reputation. **[Download the Strategy Guide](https://samillingworth.gumroad.com/l/integrity-debt-audit)** or email me at [sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com) to discuss curriculum redesign.")
 
             except Exception as e:
+
                 st.error(f"Diagnostic failed: {e}")
