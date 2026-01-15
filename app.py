@@ -68,7 +68,7 @@ if uploaded_file and expectation and email:
             
             try:
                 # Using 1.5-flash for stability and speed
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-1.5-flash-latest')
                 response = model.generate_content(prompt)
                 
                 if not response.text:
@@ -108,3 +108,4 @@ if uploaded_file and expectation and email:
 
             except Exception as e:
                 st.error(f"Diagnostic failed: {e}")
+
