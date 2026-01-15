@@ -2,7 +2,7 @@
 
 **"If a machine can pass your assessment, the failure lies in the curriculum design, not the student’s character."**
 
-![Integrity Debt Diagnostic Interface](Integrity Debt Diagnostic.png)
+![Integrity Debt Diagnostic Interface](screenshot.png)
 
 The **Integrity Debt Diagnostic** is an AI-powered tool for Higher Education professionals to audit assessment briefs against the **10 Categories of Integrity Debt** (Illingworth, 2026). It identifies vulnerabilities to AI automation and provides analytical critiques to support curriculum redesign.
 
