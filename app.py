@@ -67,15 +67,28 @@ if uploaded_file and expectation and email:
             """
             
             try:
-                # Using 1.5-flash for stability and speed
-                model = genai.GenerativeModel('gemini-1.5-flash-latest')
-                response = model.generate_content(prompt)
+                # Primary Attempt: Standard 1.5 Flash Latest
+                model_name = 'gemini-1.5-flash-latest'
+                
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    response = model.generate_content(prompt)
+                except Exception as e:
+                    if "404" in str(e):
+                        # Fallback: Find the first available model that works for your key
+                        valid_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                        if valid_models:
+                            model = genai.GenerativeModel(valid_models[0])
+                            response = model.generate_content(prompt)
+                        else:
+                            raise Exception("No available models found for this API key.")
+                    else:
+                        raise e
                 
                 if not response.text:
-                    st.error("The AI returned an empty response. Please check your brief's content.")
+                    st.error("The AI returned an empty response.")
                     st.stop()
 
-                # Clean response for valid JSON
                 clean_json = response.text.replace('```json', '').replace('```', '').strip()
                 results = json.loads(clean_json)
                 
@@ -85,27 +98,25 @@ if uploaded_file and expectation and email:
                 st.markdown("---")
                 st.subheader(f"Total Integrity Debt Score: {total}/50")
                 
-                # Gap Analysis
                 actual_cat = "Low" if total <= 20 else "Medium" if total <= 35 else "High"
                 if actual_cat == expectation:
                     st.success(f"Audit confirms your assessment: {actual_cat} susceptibility.")
                 else:
-                    st.warning(f"Integrity Gap: You expected {expectation} susceptibility, but the diagnostic reveals it is {actual_cat}.")
+                    st.warning(f"Integrity Gap: You expected {expectation}, but it is {actual_cat}.")
 
-                # Result Display
                 for cat, data in results.items():
                     with st.expander(f"{cat} - Score: {data.get('score', 'N/A')}"):
-                        st.write(f"**Critique:** {data.get('critique', 'No critique available.')}")
+                        st.write(f"**Critique:** {data.get('critique', 'N/A')}")
                         if data.get('score') != "N/A":
-                            st.caption(f"Evidence: \"{data.get('quote', 'No evidence found.')}\"")
+                            st.caption(f"Evidence: \"{data.get('quote', 'N/A')}\"")
                         else:
                             st.write(f"**Qualifying Question:** {data.get('question', 'N/A')}")
 
-                # Consultancy Link
                 st.markdown("---")
                 st.markdown("### Strategy & Consultancy")
-                st.markdown("High Integrity Debt threatens institutional reputation. **[Download the Strategy Guide](https://samillingworth.gumroad.com/l/integrity-debt-audit)** or email me at [sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com) to discuss curriculum redesign.")
+                st.markdown("High Integrity Debt threatens institutional reputation. **[Download the Strategy Guide](https://samillingworth.gumroad.com/l/integrity-debt-audit)** or email [sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com).")
 
             except Exception as e:
                 st.error(f"Diagnostic failed: {e}")
+
 
