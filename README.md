@@ -1,8 +1,10 @@
 # Integrity Debt Diagnostic
 
+**"If a machine can pass your assessment, the failure lies in the curriculum design, not the student’s character."**
+
 [**Try the Diagnostic Tool**](https://integrity-debt-audit.streamlit.app/) | [**Download the Strategy Guide**](https://samillingworth.gumroad.com/l/integrity-debt-audit) | [**Contact for Consultancy**](mailto:sam.illingworth@gmail.com)
 
-**"If a machine can pass your assessment, the failure lies in the curriculum design, not the student’s character."**
+---
 
 ![Integrity Debt Diagnostic Interface](screenshot.png)
 
