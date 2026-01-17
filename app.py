@@ -11,6 +11,11 @@ st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", l
 
 # 2. PDF Report Generator Class
 class IntegrityPDF(FPDF):
+    def __init__(self):
+        super().__init__()
+        self.set_margins(15, 15, 15)
+        self.set_auto_page_break(auto=True, margin=15)
+
     def header(self):
         self.set_font('helvetica', 'B', 16)
         self.cell(0, 10, 'Integrity Debt Audit Report', 0, 1, 'C')
@@ -21,6 +26,7 @@ class IntegrityPDF(FPDF):
     def footer(self):
         self.set_y(-15)
         self.set_font('helvetica', 'I', 8)
+        # Using {nb} placeholder for fpdf2 total page count
         self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', 0, 0, 'C')
 
     def safe_text(self, text):
@@ -32,7 +38,7 @@ class IntegrityPDF(FPDF):
             8220: '"', 8221: '"', 8222: '"', 8223: '"',
             8230: '...'
         }
-        text = text.translate(mapping)
+        text = str(text).translate(mapping)
         return text.encode('latin-1', 'ignore').decode('latin-1')
 
     def add_summary(self, actual, score, improvements):
@@ -46,26 +52,28 @@ class IntegrityPDF(FPDF):
         self.cell(0, 8, "Top 3 Priority Improvements:", 0, 1)
         self.set_font('helvetica', '', 10)
         for imp in improvements:
-            self.multi_cell(0, 6, f"- {self.safe_text(imp)}")
+            # Using epw (effective page width) to prevent horizontal space errors
+            self.multi_cell(self.epw, 6, f"- {self.safe_text(imp)}")
         self.ln(5)
 
     def add_category(self, name, score, critique, question, quote):
-        if score == 5: self.set_fill_color(200, 255, 200) # Green
-        elif score >= 3: self.set_fill_color(255, 255, 200) # Yellow
-        else: self.set_fill_color(255, 200, 200) # Red
+        if score == 5: self.set_fill_color(200, 255, 200) 
+        elif score >= 3: self.set_fill_color(255, 255, 200) 
+        else: self.set_fill_color(255, 200, 200) 
         
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, f" {self.safe_text(name)} - Score: {score}/5", 1, 1, 'L', 1)
         self.ln(2)
+        
         self.set_font('helvetica', '', 10)
-        self.multi_cell(0, 6, f"Critique: {self.safe_text(critique)}")
+        self.multi_cell(self.epw, 6, f"Critique: {self.safe_text(critique)}")
         self.ln(1)
         self.set_font('helvetica', 'I', 10)
-        self.multi_cell(0, 6, f"Dialogue Question: {self.safe_text(question)}")
+        self.multi_cell(self.epw, 6, f"Dialogue Question: {self.safe_text(question)}")
         self.ln(2)
         self.set_font('helvetica', '', 8)
         self.set_text_color(100, 100, 100)
-        self.multi_cell(0, 5, f"Evidence: \"{self.safe_text(quote)}\"")
+        self.multi_cell(self.epw, 5, f"Evidence: \"{self.safe_text(quote)}\"")
         self.set_text_color(0, 0, 0)
         self.ln(5)
 
@@ -84,7 +92,7 @@ def extract_text(uploaded_file):
         st.error(f"Extraction error: {e}")
     return text
 
-# 3. Header & Detailed Interpretation Guide (Restored)
+# 3. Header & Detailed Interpretation Guide
 st.title("Integrity Debt Diagnostic")
 
 col1, col2 = st.columns([2, 1])
@@ -181,13 +189,13 @@ if uploaded_file and email_user:
                 pdf.set_font('helvetica', 'B', 14)
                 pdf.cell(0, 10, "Curriculum Redesign & Consultancy", 0, 1)
                 pdf.set_font('helvetica', '', 11)
-                consultancy_text = (
+                consult_msg = (
                     "The Integrity Debt framework identifies vulnerabilities, but effective redesign "
                     "requires institutional expertise. Professor Sam Illingworth provides bespoke "
                     "workshops, curriculum audits, and strategic support to help Higher Education "
                     "professionals move from diagnostic debt to resilient pedagogical practice."
                 )
-                pdf.multi_cell(0, 7, consultancy_text)
+                pdf.multi_cell(pdf.epw, 7, consult_msg)
                 
                 pdf.ln(10)
                 pdf.set_font('helvetica', 'B', 11)
