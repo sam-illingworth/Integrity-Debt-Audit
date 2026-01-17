@@ -51,9 +51,8 @@ class IntegrityPDF(FPDF):
         self.cell(0, 8, "Top 3 Priority Improvements:", 0, 1)
         self.set_font('helvetica', '', 10)
         for imp in improvements:
-            # Fix: Using multi_cell with width 0 to ensure it spans the full width and resets x correctly
             self.multi_cell(0, 6, f"- {self.safe_text(imp)}")
-            self.ln(2) # Add small break between bullets
+            self.ln(2)
         self.ln(5)
 
     def add_category(self, name, score, critique, question, quote):
@@ -108,6 +107,7 @@ with col1:
     2. **Dialogue**: Take the 'Dialogue Questions' to your next staff meeting or student rep forum. 
     3. **Redesign**: Focus your energy on the **Red** categories first. These represent the highest risk to academic integrity.
     """)
+    st.markdown("[More details here](https://samillingworth.gumroad.com/l/integrity-debt-audit) (Open Access Resource)")
 
 with col2:
     st.info("""
