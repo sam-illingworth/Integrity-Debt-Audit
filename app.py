@@ -125,5 +125,7 @@ if uploaded_file and expectation and email:
             except Exception as e:
                 st.error(f"Diagnostic failed: {e}")
 
+st.markdown("---")
+st.caption("🔒 **Privacy & Data Handling**: This tool processes files in-memory. Uploaded assessment briefs are deleted immediately after the audit is complete and are not used for model training or permanent storage.")
 
 
