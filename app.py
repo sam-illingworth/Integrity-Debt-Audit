@@ -46,32 +46,34 @@ class IntegrityPDF(FPDF):
 # 3. Text Extraction Logic
 def extract_text(uploaded_file):
     text = ""
-    if uploaded_file.name.endswith('.pdf'):
-        reader = PdfReader(uploaded_file)
-        for page in reader.pages:
-            text += page.extract_text() or ""
-    elif uploaded_file.name.endswith('.docx'):
-        doc = Document(uploaded_file)
-        for para in doc.paragraphs:
-            text += para.text + "\n"
+    try:
+        if uploaded_file.name.endswith('.pdf'):
+            reader = PdfReader(uploaded_file)
+            for page in reader.pages:
+                text += page.extract_text() or ""
+        elif uploaded_file.name.endswith('.docx'):
+            doc = Document(uploaded_file)
+            for para in doc.paragraphs:
+                text += para.text + "\n"
+    except Exception as e:
+        st.error(f"Text extraction error: {e}")
     return text
 
 # 4. Header & Detailed Interpretation Guide
 st.title("Integrity Debt Diagnostic")
 
-# Two-column layout for the guide
 col1, col2 = st.columns([2, 1])
 
 with col1:
     st.markdown("""
     ### What is Integrity Debt?
-    Integrity Debt refers to the structural vulnerabilities within an assessment that make it susceptible to automation via Generative AI. High debt is not a student failure; it is a curriculum design challenge.
+    Integrity Debt refers to structural vulnerabilities within an assessment that make it susceptible to automation via AI. High debt is a curriculum design challenge, not a student character flaw.
     
     ### How to Use These Results
     This diagnostic provides a 'Traffic Light' audit of your assessment brief. 
     1. **Reflect**: Review the critiques provided by the AI. Are they fair?
     2. **Dialogue**: Take the 'Dialogue Questions' to your next staff meeting or student rep forum. 
-    3. **Redesign**: Focus your energy on the **Red** categories first. These are your highest risks.
+    3. **Redesign**: Focus your energy on the **Red** categories first.
     """)
 
 with col2:
@@ -106,6 +108,10 @@ if uploaded_file and email_user:
     if st.button("Generate Diagnostic Report", key="btn_in"):
         text_content = extract_text(uploaded_file)
         
+        if not text_content:
+            st.error("Could not extract text from file.")
+            st.stop()
+
         with st.spinner("Professor Illingworth is auditing your curriculum..."):
             prompt = f"""
             You are Professor Sam Illingworth. Audit this assessment brief using the 10 categories of Integrity Debt.
@@ -123,8 +129,27 @@ if uploaded_file and email_user:
             """
             
             try:
-                model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                # DYNAMIC MODEL SELECTION TO PREVENT 404
+                available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                
+                # Preferred order: flash-latest -> flash -> first available
+                if 'models/gemini-1.5-flash-latest' in available_models:
+                    model_id = 'gemini-1.5-flash-latest'
+                elif 'models/gemini-1.5-flash' in available_models:
+                    model_id = 'gemini-1.5-flash'
+                elif available_models:
+                    model_id = available_models[0]
+                else:
+                    st.error("No compatible Gemini models found for this API key.")
+                    st.stop()
+
+                model = genai.GenerativeModel(model_id)
                 response = model.generate_content(prompt)
+                
+                if not response.text:
+                    st.error("AI returned an empty response. Please try again.")
+                    st.stop()
+
                 clean_json = response.text.replace('```json', '').replace('```', '').strip()
                 results = json.loads(clean_json)
                 
@@ -156,6 +181,7 @@ if uploaded_file and email_user:
                 pdf.cell(0, 8, "Integrity Debt Strategy Guide: https://samillingworth.gumroad.com/l/integrity-debt-audit", 0, 1)
                 pdf.cell(0, 8, f"Facilitator: {email_user} | Framework by: sam.illingworth@gmail.com", 0, 1)
 
+                # Safe Encoding for PDF
                 pdf_bytes = pdf.output(dest='S').encode('latin-1', errors='ignore')
                 st.download_button(
                     label="Download Audit Report (PDF)",
