@@ -22,7 +22,6 @@ class IntegrityPDF(FPDF):
         """Clean text to prevent latin-1 encoding errors in FPDF"""
         if not text:
             return "N/A"
-        # Map common problematic unicode characters to latin-1 equivalents
         mapping = {
             150: '-', 151: '-', 8211: '-', 8212: '-',
             8216: "'", 8217: "'", 8218: "'", 8219: "'",
@@ -53,7 +52,6 @@ class IntegrityPDF(FPDF):
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, f" {self.safe_text(name)} - Score: {score}/5", 1, 1, 'L', 1)
         self.ln(2)
-        
         self.set_font('helvetica', '', 10)
         self.multi_cell(0, 6, f"Critique: {self.safe_text(critique)}")
         self.ln(1)
@@ -151,7 +149,7 @@ if uploaded_file and email_user:
                         processed_results[cat] = val
                     else: 
                         s = int(val)
-                        processed_results[cat] = {"score": s, "critique": "N/A", "question": "N/A", "quote": "N/A"}
+                        processed_results[cat] = {"score": s, "critique": "Analysis provided in PDF", "question": "Review logic in report", "quote": "See brief"}
                     total_score += s
 
                 actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
@@ -172,9 +170,26 @@ if uploaded_file and email_user:
                 for cat, data in processed_results.items():
                     pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                 
-                pdf.ln(5); pdf.set_font('helvetica', 'B', 10)
-                pdf.cell(0, 10, f"Contact: {email_user} | Framework: sam.illingworth@gmail.com", 0, 1)
+                # Consultancy & Upsell Section
+                pdf.ln(10)
+                pdf.set_font('helvetica', 'B', 12)
+                pdf.cell(0, 10, "Curriculum Redesign & Consultancy", 0, 1)
+                pdf.set_font('helvetica', '', 10)
+                consultancy_text = (
+                    "The Integrity Debt framework identifies vulnerabilities, but effective redesign "
+                    "requires institutional expertise. Professor Sam Illingworth provides bespoke "
+                    "workshops, curriculum audits, and strategic support to help Higher Education "
+                    "professionals move from diagnostic debt to resilient pedagogical practice."
+                )
+                pdf.multi_cell(0, 6, consultancy_text)
                 
+                pdf.ln(4)
+                pdf.set_font('helvetica', 'B', 10)
+                pdf.cell(0, 8, "Access the Strategy Guide: https://samillingworth.gumroad.com/l/integrity-debt-audit", 0, 1)
+                pdf.set_font('helvetica', '', 10)
+                pdf.cell(0, 8, f"Facilitator Email: {email_user}", 0, 1)
+                pdf.cell(0, 8, "Contact: sam.illingworth@gmail.com", 0, 1)
+
                 pdf_output = pdf.output()
                 st.download_button("Download PDF Report", data=bytes(pdf_output), file_name="Integrity_Audit.pdf", mime="application/pdf", key="dl_k")
 
