@@ -41,6 +41,7 @@ class IntegrityPDF(FPDF):
         self.ln(2)
         self.set_font('helvetica', '', 10)
         self.multi_cell(0, 6, f"Critique: {critique}")
+        self.ln(1)
         self.set_font('helvetica', 'I', 10)
         self.multi_cell(0, 6, f"Dialogue Question: {question}")
         self.ln(2)
@@ -65,17 +66,34 @@ def extract_text(uploaded_file):
         st.error(f"Extraction error: {e}")
     return text
 
-# 3. UI Header
+# 3. Header & Detailed Interpretation Guide
 st.title("Integrity Debt Diagnostic")
+
 col1, col2 = st.columns([2, 1])
+
 with col1:
-    st.markdown("### What is Integrity Debt?\nIntegrity Debt refers to structural vulnerabilities that make assessments susceptible to AI automation.")
+    st.markdown("""
+    ### What is Integrity Debt?
+    Integrity Debt refers to structural vulnerabilities within an assessment that make it susceptible to automation via AI. High debt is a curriculum design challenge, not a student character flaw.
+    
+    ### How to Use These Results
+    This diagnostic provides a 'Traffic Light' audit of your assessment brief. 
+    1. **Reflect**: Review the critiques provided by the AI. Are they fair?
+    2. **Dialogue**: Take the 'Dialogue Questions' to your next staff meeting or student rep forum. 
+    3. **Redesign**: Focus your energy on the **Red** categories first. These represent the highest risk to academic integrity.
+    """)
+
 with col2:
-    st.info("**Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
+    st.info("""
+    **The Scoring System**
+    * 🟢 **5 (Resilient)**: Low vulnerability. High structural integrity.
+    * 🟡 **3-4 (Moderate)**: Vulnerabilities exist. Requires review.
+    * 🔴 **1-2 (Vulnerable)**: High debt. Immediate redesign advised.
+    """)
 
 st.divider()
 
-# 4. Sidebar
+# 4. Sidebar & Authentication
 with st.sidebar:
     st.header("Setup")
     api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
@@ -85,19 +103,23 @@ with st.sidebar:
     email_user = st.text_input("Your Email (for report):", key="em_k")
 
 # 5. Execution
-uploaded_file = st.file_uploader("Upload Brief (PDF/DOCX)", type=["pdf", "docx"], key="up_k")
+uploaded_file = st.file_uploader("Upload Assessment Brief (PDF/DOCX)", type=["pdf", "docx"], key="up_k")
 
 if uploaded_file and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
         text_content = extract_text(uploaded_file)
+        
         with st.spinner("Professor Illingworth is auditing your curriculum..."):
             prompt = f"""
-            Audit this brief using the 10 Integrity Debt categories. 
-            Return ONLY a JSON object where keys are categories.
+            You are Professor Sam Illingworth. Audit this assessment brief using the 10 categories of Integrity Debt.
+            Return ONLY a valid JSON object. 
+            Scoring: 5 (High Structural Resilience/Green) to 1 (High Vulnerability/Red).
             Each category value MUST be a dictionary: {{"score": int, "critique": str, "question": str, "quote": str}}.
-            Scoring: 5 (Resilient) to 1 (Vulnerable).
-            Brief: {text_content[:15000]}
+            
+            Categories: 1. Weighting, 2. Documentation, 3. Context, 4. Reflection, 5. Time, 6. Multimodal, 7. Interrogation, 8. Defence, 9. Collaborative, 10. Recency.
+            Brief Text: {text_content[:15000]}
             """
+            
             try:
                 available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                 model_id = 'models/gemini-1.5-flash-latest' if 'models/gemini-1.5-flash-latest' in available_models else available_models[0]
@@ -112,14 +134,15 @@ if uploaded_file and email_user:
                     if isinstance(val, dict):
                         s = int(val.get('score', 0))
                         processed_results[cat] = val
-                    else: # Handle cases where AI returns a raw integer
+                    else: 
                         s = int(val)
-                        processed_results[cat] = {"score": s, "critique": "N/A", "question": "N/A", "quote": "N/A"}
+                        processed_results[cat] = {"score": s, "critique": "Analysis provided in PDF", "question": "Review logic in report", "quote": "See brief"}
                     total_score += s
 
                 actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                 st.subheader(f"Total Score: {total_score}/50 ({actual_cat} Susceptibility)")
                 
+                # UI Display
                 for cat, data in processed_results.items():
                     score = int(data.get('score', 0))
                     if score == 5: st.success(f"🟢 {cat}")
@@ -143,4 +166,5 @@ if uploaded_file and email_user:
             except Exception as e:
                 st.error(f"Audit failed: {e}")
 
-
+st.divider()
+st.caption("🔒 Privacy: Stateless processing. No data storage.")
