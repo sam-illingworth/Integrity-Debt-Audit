@@ -1,18 +1,18 @@
-# Integrity Debt Diagnostic
+# Integrity Debt Audit
 
 **"If a machine can pass your assessment, the failure lies in the curriculum design, not the student’s character."**
 
-[**Try the Diagnostic Tool**](https://integrity-debt-audit.streamlit.app/) | [**Download the Strategy Guide**](https://samillingworth.gumroad.com/l/integrity-debt-audit) | [**Contact for Consultancy**](mailto:sam.illingworth@gmail.com)
+[**Try the Audit Tool**](https://integrity-debt-audit.streamlit.app/) | [**Download the Strategy Guide**](https://samillingworth.gumroad.com/l/integrity-debt-audit) | [**Contact for Consultancy**](mailto:sam.illingworth@gmail.com)
 
 ---
 
 ![Integrity Debt Diagnostic Interface](screenshot.png)
 
-The **Integrity Debt Diagnostic** is an AI-powered tool for Higher Education professionals to audit assessment briefs against the **10 Categories of Integrity Debt** (Illingworth, 2026). It identifies vulnerabilities to AI automation and provides analytical critiques to support curriculum redesign.
+The **Integrity Debt Audit** is an AI-powered tool for Higher Education professionals to audit assessment briefs against the **10 Categories of Integrity Debt** (Illingworth, 2026). It identifies vulnerabilities to AI automation and provides analytical critiques to support curriculum redesign.
 
 ## Core Methodology
 
-The diagnostic evaluates uploaded documents (PDF/DOCX) across ten critical dimensions:
+The audit evaluates uploaded documents (PDF/DOCX) across ten critical dimensions:
 
 1.  **Weighting**: Proportion of credit relative to effort.
 2.  **Documentation**: Explicitness of academic integrity requirements.
