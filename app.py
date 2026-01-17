@@ -20,32 +20,27 @@ class IntegrityPDF(FPDF):
 
     def add_summary(self, expectation, actual, score):
         self.set_font('helvetica', 'B', 12)
-        self.cell(0, 10, f"Executive Summary", 0, 1)
+        self.cell(0, 10, "Executive Summary", 0, 1)
         self.set_font('helvetica', '', 10)
         self.cell(0, 8, f"Total Integrity Score: {score}/50", 0, 1)
         self.cell(0, 8, f"Predicted Susceptibility: {expectation}", 0, 1)
         self.cell(0, 8, f"Actual Susceptibility: {actual}", 0, 1)
         if expectation != actual:
             self.set_text_color(200, 0, 0)
-            self.cell(0, 8, f"Note: An integrity gap was identified between prediction and audit.", 0, 1)
+            self.cell(0, 8, "Note: An integrity gap was identified between prediction and audit.", 0, 1)
             self.set_text_color(0, 0, 0)
         self.ln(5)
 
     def add_category(self, name, score, critique, question, quote):
-        if score == 5:
-            self.set_fill_color(200, 255, 200) # Green
-        elif score >= 3:
-            self.set_fill_color(255, 255, 200) # Yellow
-        else:
-            self.set_fill_color(255, 200, 200) # Red
+        if score == 5: self.set_fill_color(200, 255, 200) # Green
+        elif score >= 3: self.set_fill_color(255, 255, 200) # Yellow
+        else: self.set_fill_color(255, 200, 200) # Red
         
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, f" {name} - Score: {score}/5", 1, 1, 'L', 1)
         self.ln(2)
-        
         self.set_font('helvetica', '', 10)
         self.multi_cell(0, 6, f"Critique: {critique}")
-        self.ln(1)
         self.set_font('helvetica', 'I', 10)
         self.multi_cell(0, 6, f"Dialogue Question: {question}")
         self.ln(2)
@@ -72,99 +67,82 @@ def extract_text(uploaded_file):
 
 # 3. UI Header
 st.title("Integrity Debt Diagnostic")
-
 col1, col2 = st.columns([2, 1])
 with col1:
-    st.markdown("""
-    ### What is Integrity Debt?
-    Integrity Debt refers to structural vulnerabilities that make assessments susceptible to AI automation. 
-    
-    ### How to Use
-    1. **Audit**: Review the AI-generated critiques.
-    2. **Dialogue**: Use the suggested questions to engage students in assessment design.
-    3. **Action**: Prioritize redesign for categories marked in **Red**.
-    """)
+    st.markdown("### What is Integrity Debt?\nIntegrity Debt refers to structural vulnerabilities that make assessments susceptible to AI automation.")
 with col2:
-    st.info("""
-    **The Scoring System**
-    * 🟢 **5 (Resilient)**: Low vulnerability.
-    * 🟡 **3-4 (Moderate)**: Vulnerabilities exist.
-    * 🔴 **1-2 (Vulnerable)**: High debt.
-    """)
+    st.info("**Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
 
 st.divider()
 
-# 4. Sidebar Setup
+# 4. Sidebar
 with st.sidebar:
     st.header("Setup")
-    api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="k1")
-    if api_key:
-        genai.configure(api_key=api_key)
-    else:
-        st.stop()
-    expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"], key="k2")
-    email_user = st.text_input("Your Email (for report):", key="k3")
+    api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
+    if api_key: genai.configure(api_key=api_key)
+    else: st.stop()
+    expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"], key="exp_k")
+    email_user = st.text_input("Your Email (for report):", key="em_k")
 
 # 5. Execution
-uploaded_file = st.file_uploader("Upload Brief (PDF/DOCX)", type=["pdf", "docx"], key="k4")
+uploaded_file = st.file_uploader("Upload Brief (PDF/DOCX)", type=["pdf", "docx"], key="up_k")
 
 if uploaded_file and email_user:
-    if st.button("Generate Diagnostic Report", key="k5"):
+    if st.button("Generate Diagnostic Report", key="run_k"):
         text_content = extract_text(uploaded_file)
-        
-        with st.spinner("Analyzing curriculum resilience..."):
+        with st.spinner("Professor Illingworth is auditing your curriculum..."):
             prompt = f"""
-            You are Professor Sam Illingworth. Audit this assessment brief using the 10 categories of Integrity Debt.
-            Return ONLY a valid JSON object. Scoring: 5=Resilient, 1-2=Vulnerable.
-            Categories: 1. Weighting, 2. Documentation, 3. Context, 4. Reflection, 5. Time, 6. Multimodal, 7. Interrogation, 8. Defence, 9. Collaborative, 10. Recency.
-            Brief Text: {text_content[:15000]}
+            Audit this brief using the 10 Integrity Debt categories. 
+            Return ONLY a JSON object where keys are categories.
+            Each category value MUST be a dictionary: {{"score": int, "critique": str, "question": str, "quote": str}}.
+            Scoring: 5 (Resilient) to 1 (Vulnerable).
+            Brief: {text_content[:15000]}
             """
-            
             try:
                 available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                 model_id = 'models/gemini-1.5-flash-latest' if 'models/gemini-1.5-flash-latest' in available_models else available_models[0]
-                
                 model = genai.GenerativeModel(model_id)
                 response = model.generate_content(prompt)
                 results = json.loads(response.text.replace('```json', '').replace('```', '').strip())
                 
-                total_score = sum([int(v.get('score', 0)) for v in results.values()])
+                # SAFE CALCULATION
+                total_score = 0
+                processed_results = {}
+                for cat, val in results.items():
+                    if isinstance(val, dict):
+                        s = int(val.get('score', 0))
+                        processed_results[cat] = val
+                    else: # Handle cases where AI returns a raw integer
+                        s = int(val)
+                        processed_results[cat] = {"score": s, "critique": "N/A", "question": "N/A", "quote": "N/A"}
+                    total_score += s
+
                 actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
-                
                 st.subheader(f"Total Score: {total_score}/50 ({actual_cat} Susceptibility)")
                 
-                # UI Display
-                for cat, data in results.items():
+                for cat, data in processed_results.items():
                     score = int(data.get('score', 0))
                     if score == 5: st.success(f"🟢 {cat}")
                     elif score >= 3: st.warning(f"🟡 {cat}")
                     else: st.error(f"🔴 {cat}")
-                    st.write(f"**Dialogue:** {data.get('question')}")
+                    st.write(f"**Dialogue:** {data.get('question', 'N/A')}")
 
-                # PDF Logic (Fixed)
+                # PDF Generation
                 pdf = IntegrityPDF()
                 pdf.add_page()
                 pdf.add_summary(expectation, actual_cat, total_score)
-                for cat, data in results.items():
-                    pdf.add_category(cat, int(data.get('score', 0)), data.get('critique'), data.get('question'), data.get('quote'))
+                for cat, data in processed_results.items():
+                    pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                 
-                pdf.ln(5)
-                pdf.set_font('helvetica', 'B', 10)
-                pdf.cell(0, 10, "Strategy Guide: https://samillingworth.gumroad.com/l/integrity-debt-audit", 0, 1)
+                pdf.ln(5); pdf.set_font('helvetica', 'B', 10)
+                pdf.cell(0, 10, f"Contact: {email_user} | Framework: sam.illingworth@gmail.com", 0, 1)
                 
-                # FIX: fpdf2 output('S') returns bytes, no .encode() needed
                 pdf_output = pdf.output()
-                
-                st.download_button(
-                    label="Download Audit Report (PDF)",
-                    data=bytes(pdf_output),
-                    file_name="Integrity_Audit.pdf",
-                    mime="application/pdf",
-                    key="k6"
-                )
+                st.download_button("Download PDF Report", data=bytes(pdf_output), file_name="Integrity_Audit.pdf", mime="application/pdf", key="dl_k")
 
             except Exception as e:
                 st.error(f"Audit failed: {e}")
 
-st.divider()
-st.caption("🔒 Privacy: Stateless processing. No data storage.")
+
+
+Would you like me to draft that LinkedIn announcement now?
