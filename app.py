@@ -18,8 +18,13 @@ class IntegrityPDF(FPDF):
         self.cell(0, 10, 'Framework by Professor Sam Illingworth (2026)', 0, 1, 'C')
         self.ln(10)
 
+    def footer(self):
+        # Position at 1.5 cm from bottom
+        self.set_y(-15)
+        self.set_font('helvetica', 'I', 8)
+        self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', 0, 0, 'C')
+
     def safe_text(self, text):
-        """Clean text to prevent latin-1 encoding errors in FPDF"""
         if not text:
             return "N/A"
         mapping = {
@@ -45,9 +50,9 @@ class IntegrityPDF(FPDF):
         self.ln(5)
 
     def add_category(self, name, score, critique, question, quote):
-        if score == 5: self.set_fill_color(200, 255, 200) # Green
-        elif score >= 3: self.set_fill_color(255, 255, 200) # Yellow
-        else: self.set_fill_color(255, 200, 200) # Red
+        if score == 5: self.set_fill_color(200, 255, 200) 
+        elif score >= 3: self.set_fill_color(255, 255, 200) 
+        else: self.set_fill_color(255, 200, 200) 
         
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, f" {self.safe_text(name)} - Score: {score}/5", 1, 1, 'L', 1)
@@ -79,7 +84,7 @@ def extract_text(uploaded_file):
         st.error(f"Extraction error: {e}")
     return text
 
-# 3. Header & Detailed Interpretation Guide
+# 3. UI Header
 st.title("Integrity Debt Diagnostic")
 
 col1, col2 = st.columns([2, 1])
@@ -126,7 +131,7 @@ if uploaded_file and email_user:
             prompt = f"""
             You are Professor Sam Illingworth. Audit this assessment brief using the 10 categories of Integrity Debt.
             Return ONLY a valid JSON object. 
-            Scoring: 5 (High Structural Resilience/Green) to 1 (High Vulnerability/Red).
+            Scoring: 5 (High Structural Resilience) to 1 (High Vulnerability).
             Each category value MUST be a dictionary: {{"score": int, "critique": str, "question": str, "quote": str}}.
             
             Categories: 1. Weighting, 2. Documentation, 3. Context, 4. Reflection, 5. Time, 6. Multimodal, 7. Interrogation, 8. Defence, 9. Collaborative, 10. Recency.
@@ -140,7 +145,6 @@ if uploaded_file and email_user:
                 response = model.generate_content(prompt)
                 results = json.loads(response.text.replace('```json', '').replace('```', '').strip())
                 
-                # SAFE CALCULATION
                 total_score = 0
                 processed_results = {}
                 for cat, val in results.items():
@@ -153,45 +157,48 @@ if uploaded_file and email_user:
                     total_score += s
 
                 actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
-                st.subheader(f"Total Score: {total_score}/50 ({actual_cat} Susceptibility)")
                 
-                # UI Display
+                # App Results Summary
+                st.subheader("Diagnostic Results Summary")
+                st.warning("NOTE: The overview below is a summary. For the full critique, dialogue questions, and evidence quotes, please download the PDF report.")
+                st.write(f"**Total Score:** {total_score}/50 ({actual_cat} Susceptibility)")
+                
                 for cat, data in processed_results.items():
                     score = int(data.get('score', 0))
                     if score == 5: st.success(f"🟢 {cat}")
                     elif score >= 3: st.warning(f"🟡 {cat}")
                     else: st.error(f"🔴 {cat}")
-                    st.write(f"**Dialogue:** {data.get('question', 'N/A')}")
 
                 # PDF Generation
                 pdf = IntegrityPDF()
+                pdf.alias_nb_pages()
                 pdf.add_page()
                 pdf.add_summary(expectation, actual_cat, total_score)
                 for cat, data in processed_results.items():
                     pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                 
-                # Consultancy & Upsell Section
-                pdf.ln(10)
-                pdf.set_font('helvetica', 'B', 12)
+                # Force Page Break for Consultancy
+                pdf.add_page()
+                pdf.set_font('helvetica', 'B', 14)
                 pdf.cell(0, 10, "Curriculum Redesign & Consultancy", 0, 1)
-                pdf.set_font('helvetica', '', 10)
+                pdf.set_font('helvetica', '', 11)
                 consultancy_text = (
                     "The Integrity Debt framework identifies vulnerabilities, but effective redesign "
                     "requires institutional expertise. Professor Sam Illingworth provides bespoke "
                     "workshops, curriculum audits, and strategic support to help Higher Education "
                     "professionals move from diagnostic debt to resilient pedagogical practice."
                 )
-                pdf.multi_cell(0, 6, consultancy_text)
+                pdf.multi_cell(0, 7, consultancy_text)
                 
-                pdf.ln(4)
-                pdf.set_font('helvetica', 'B', 10)
+                pdf.ln(10)
+                pdf.set_font('helvetica', 'B', 11)
+                pdf.cell(0, 10, "Next Steps", 0, 1)
+                pdf.set_font('helvetica', '', 11)
                 pdf.cell(0, 8, "Access the Strategy Guide: https://samillingworth.gumroad.com/l/integrity-debt-audit", 0, 1)
-                pdf.set_font('helvetica', '', 10)
-                pdf.cell(0, 8, f"Facilitator Email: {email_user}", 0, 1)
-                pdf.cell(0, 8, "Contact: sam.illingworth@gmail.com", 0, 1)
-
+                pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
+                
                 pdf_output = pdf.output()
-                st.download_button("Download PDF Report", data=bytes(pdf_output), file_name="Integrity_Audit.pdf", mime="application/pdf", key="dl_k")
+                st.download_button("Download Full PDF Report", data=bytes(pdf_output), file_name="Integrity_Audit.pdf", mime="application/pdf", key="dl_k")
 
             except Exception as e:
                 st.error(f"Audit failed: {e}")
