@@ -144,5 +144,3 @@ if uploaded_file and email_user:
                 st.error(f"Audit failed: {e}")
 
 
-
-Would you like me to draft that LinkedIn announcement now?
