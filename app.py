@@ -26,7 +26,6 @@ class IntegrityPDF(FPDF):
     def footer(self):
         self.set_y(-15)
         self.set_font('helvetica', 'I', 8)
-        # Using {nb} placeholder for fpdf2 total page count
         self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', 0, 0, 'C')
 
     def safe_text(self, text):
@@ -52,8 +51,9 @@ class IntegrityPDF(FPDF):
         self.cell(0, 8, "Top 3 Priority Improvements:", 0, 1)
         self.set_font('helvetica', '', 10)
         for imp in improvements:
-            # Using epw (effective page width) to prevent horizontal space errors
-            self.multi_cell(self.epw, 6, f"- {self.safe_text(imp)}")
+            # Fix: Using multi_cell with width 0 to ensure it spans the full width and resets x correctly
+            self.multi_cell(0, 6, f"- {self.safe_text(imp)}")
+            self.ln(2) # Add small break between bullets
         self.ln(5)
 
     def add_category(self, name, score, critique, question, quote):
@@ -66,14 +66,14 @@ class IntegrityPDF(FPDF):
         self.ln(2)
         
         self.set_font('helvetica', '', 10)
-        self.multi_cell(self.epw, 6, f"Critique: {self.safe_text(critique)}")
+        self.multi_cell(0, 6, f"Critique: {self.safe_text(critique)}")
         self.ln(1)
         self.set_font('helvetica', 'I', 10)
-        self.multi_cell(self.epw, 6, f"Dialogue Question: {self.safe_text(question)}")
+        self.multi_cell(0, 6, f"Dialogue Question: {self.safe_text(question)}")
         self.ln(2)
         self.set_font('helvetica', '', 8)
         self.set_text_color(100, 100, 100)
-        self.multi_cell(self.epw, 5, f"Evidence: \"{self.safe_text(quote)}\"")
+        self.multi_cell(0, 5, f"Evidence: \"{self.safe_text(quote)}\"")
         self.set_text_color(0, 0, 0)
         self.ln(5)
 
@@ -195,7 +195,7 @@ if uploaded_file and email_user:
                     "workshops, curriculum audits, and strategic support to help Higher Education "
                     "professionals move from diagnostic debt to resilient pedagogical practice."
                 )
-                pdf.multi_cell(pdf.epw, 7, consult_msg)
+                pdf.multi_cell(0, 7, consult_msg)
                 
                 pdf.ln(10)
                 pdf.set_font('helvetica', 'B', 11)
