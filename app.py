@@ -18,6 +18,20 @@ class IntegrityPDF(FPDF):
         self.cell(0, 10, 'Framework by Professor Sam Illingworth (2026)', 0, 1, 'C')
         self.ln(10)
 
+    def safe_text(self, text):
+        """Clean text to prevent latin-1 encoding errors in FPDF"""
+        if not text:
+            return "N/A"
+        # Map common problematic unicode characters to latin-1 equivalents
+        mapping = {
+            150: '-', 151: '-', 8211: '-', 8212: '-',
+            8216: "'", 8217: "'", 8218: "'", 8219: "'",
+            8220: '"', 8221: '"', 8222: '"', 8223: '"',
+            8230: '...'
+        }
+        text = text.translate(mapping)
+        return text.encode('latin-1', 'ignore').decode('latin-1')
+
     def add_summary(self, expectation, actual, score):
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, "Executive Summary", 0, 1)
@@ -37,17 +51,18 @@ class IntegrityPDF(FPDF):
         else: self.set_fill_color(255, 200, 200) # Red
         
         self.set_font('helvetica', 'B', 12)
-        self.cell(0, 10, f" {name} - Score: {score}/5", 1, 1, 'L', 1)
+        self.cell(0, 10, f" {self.safe_text(name)} - Score: {score}/5", 1, 1, 'L', 1)
         self.ln(2)
+        
         self.set_font('helvetica', '', 10)
-        self.multi_cell(0, 6, f"Critique: {critique}")
+        self.multi_cell(0, 6, f"Critique: {self.safe_text(critique)}")
         self.ln(1)
         self.set_font('helvetica', 'I', 10)
-        self.multi_cell(0, 6, f"Dialogue Question: {question}")
+        self.multi_cell(0, 6, f"Dialogue Question: {self.safe_text(question)}")
         self.ln(2)
         self.set_font('helvetica', '', 8)
         self.set_text_color(100, 100, 100)
-        self.multi_cell(0, 5, f"Evidence: \"{quote}\"")
+        self.multi_cell(0, 5, f"Evidence: \"{self.safe_text(quote)}\"")
         self.set_text_color(0, 0, 0)
         self.ln(5)
 
@@ -136,7 +151,7 @@ if uploaded_file and email_user:
                         processed_results[cat] = val
                     else: 
                         s = int(val)
-                        processed_results[cat] = {"score": s, "critique": "Analysis provided in PDF", "question": "Review logic in report", "quote": "See brief"}
+                        processed_results[cat] = {"score": s, "critique": "N/A", "question": "N/A", "quote": "N/A"}
                     total_score += s
 
                 actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
