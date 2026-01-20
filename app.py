@@ -152,7 +152,6 @@ with col2:
 
 st.divider()
 
-# Sidebar for Authentication ONLY
 with st.sidebar:
     st.header("Authentication")
     api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
@@ -169,38 +168,32 @@ else:
         with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
     else: text_content = raw_input
 
-# 5. Execution (Rigidly Gate-kept)
+# 5. Execution
 if text_content and email_user and api_key:
     if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Analysing assessment integrity..."):
+        with st.spinner("Synchronising with synthetic endpoints..."):
             try:
-                # Setup model only when button is pressed to save quota
                 genai.configure(api_key=api_key)
-                # Hardcoded stable identifier to prevent 404/Quota waste
-                model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
+                # Dynamic model resolution inside button to resolve 404
+                available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                target_model = next((m for m in available_models if 'flash' in m), available_models[0])
+                
+                model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
                 
                 prompt = f"""
-                You are Professor Sam Illingworth. Perform a combined triage and audit on the provided text.
+                You are Professor Sam Illingworth. Perform a combined triage and audit.
                 
                 STEP 1: IDENTIFICATION
-                Scan text to identify substantive assessment instructions (Portfolio, Exam, Essay). 
-                - Identify the task with highest credit weighting or most substantive description. 
-                - If no assessment is found, return a JSON error.
+                Scan text for substantive assessment instructions (Portfolio, Exam, Essay). 
+                Identify the task with highest credit weighting. If none, return JSON error.
                 
                 STEP 2: AUDIT
-                Analyse that specific task using the 10 categories of Integrity Debt. 
-                RULES: Ground exclusively in text; state "No evidence found" if absent; lock temperature at 0.0; ignore file metadata.
+                Analyse that task using the 10 categories of Integrity Debt. 
+                RULES: Ground in text; state "No evidence found" if absent; lock temperature 0.0; ignore metadata.
                 
                 Return ONLY a valid JSON object.
                 
-                JSON Structure: 
-                {{
-                    "status": "success",
-                    "doc_context": "Identification of the specific task audited",
-                    "audit_results": {{cat: {{score, critique, question, quote}}}}, 
-                    "top_improvements": [str, str, str]
-                }}
-                
+                Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
                 Text: {text_content[:8000]}
                 """
                 
@@ -238,7 +231,7 @@ if text_content and email_user and api_key:
                         pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                     
                     pdf.add_page(); pdf.set_font('helvetica', 'B', 14); pdf.cell(0, 10, "Curriculum Redesign and Consultancy", 0, 1)
-                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
+                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
                     pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.substack.com/", 0, 1)
                     pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
                     
