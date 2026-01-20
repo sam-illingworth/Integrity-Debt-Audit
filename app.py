@@ -178,9 +178,10 @@ if text_content and email_user:
             You are Professor Sam Illingworth. Perform a two-step analysis on the provided text.
             
             STEP 1: TRIAGE AND SELECTION
-            Scan the entire text to identify any specific assessment tasks (e.g., portfolios, essays, examinations). 
+            Scan the entire text to identify substantive assessment instructions. Look for keywords like "Portfolio", "Examination", "Essay Requirements", "Portfolio Assessment", "Release of paper", or "Portfolio details". 
+            - Even if the document is a general handbook, locate the section describing how a specific module or paper is assessed.
             - If no assessment tasks are identified, return ONLY a JSON object with: {{"status": "error", "message": "No substantive assessment brief identified in the text. Please ensure the document includes task descriptions or requirements."}}
-            - If multiple tasks are present, select the most substantive assessment (e.g., based on word count, percentage weighting, or primary exam status). 
+            - If multiple tasks are present, select the most substantive one (prioritize portfolios or terminal essays). 
             
             STEP 2: AUDIT (ONLY if Step 1 is successful)
             Analyse the selected task using the 10 categories of Integrity Debt. 
@@ -191,7 +192,7 @@ if text_content and email_user:
             JSON Structure: 
             {{
                 "status": "success",
-                "doc_context": "The title or description of the specific task identified for audit",
+                "doc_context": "The title or specific portfolio/task identified for audit",
                 "audit_results": {{cat: {{score, critique, question, quote}}}}, 
                 "top_improvements": [str, str, str]
             }}
