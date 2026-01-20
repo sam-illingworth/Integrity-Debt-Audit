@@ -82,7 +82,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(0, 0, 0)
         self.ln(5)
 
-# 3. Utilities
+# 3. Functions
 def extract_text(uploaded_file):
     text = ""
     try:
@@ -101,129 +101,116 @@ def scrape_url(url):
         soup = BeautifulSoup(response.text, 'html.parser')
         tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])
         content = "\n".join([t.get_text() for t in tags])
-        if not content.strip(): return "No readable text found at URL."
-        return content
-    except Exception as e: return f"Error retrieving web content: {str(e)}"
+        return content if content.strip() else "No readable text found."
+    except Exception as e: return f"Error: {str(e)}"
 
 def clean_json_string(raw_string):
-    try:
-        match = re.search(r'\{.*\}', raw_string, re.DOTALL)
-        if match: return match.group(0)
-        return raw_string.strip()
-    except: return raw_string.strip()
+    match = re.search(r'\{.*\}', raw_string, re.DOTALL)
+    return match.group(0) if match else raw_string.strip()
 
-# Model Resource Cache to Save Quota
-@st.cache_resource
-def get_audit_model(api_key):
+# Audit Cache to Save Quota
+@st.cache_data(show_spinner=False)
+def run_audit_api(api_key, text):
     genai.configure(api_key=api_key)
+    # Registry lookup wrapped in try-except to handle versioning
     try:
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        target_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
-        return genai.GenerativeModel(target_name, generation_config={"temperature": 0.0})
-    except:
-        return genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
+        target = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
+    except: target = 'gemini-1.5-flash'
+    
+    model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
+    prompt = f"""
+    You are Professor Sam Illingworth. Perform a combined triage and audit.
+    STEP 1: Identify the highest weighting task.
+    STEP 2: Audit using 10 categories of Integrity Debt. 
+    Return ONLY a JSON object.
+    Text: {text[:6000]}
+    """
+    response = model.generate_content(prompt)
+    return response.text
 
 # 4. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
-st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory and are never stored. No database of assessments is created.")
+st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
 
 st.markdown("""
 ### How to run this diagnostic
-To begin the audit, you must first complete the **Setup** section below.
-1. Provide your **Email Address** for the final report.
-2. Select your **Predicted Susceptibility** (how vulnerable you believe the assessment is to AI).
-3. Once these are set, upload your file or paste your content to generate the report.
+Complete the setup fields below. This tool remains inert until you click the final button.
 """)
 
-st.divider()
-
-st.subheader("1. Setup")
-setup_col1, setup_col2 = st.columns(2)
-with setup_col1:
-    email_user = st.text_input("Your Email (required for report):", key="em_k")
-with setup_col2:
-    expectation = st.selectbox("Predicted Susceptibility (required):", ["Low", "Medium", "High"], key="exp_k")
-
-st.divider()
-
-col1, col2 = st.columns([2, 1])
-with col1:
+# INSTRUCTIONAL BLOCK RESTORED
+col_info1, col_info2 = st.columns([2, 1])
+with col_info1:
     st.markdown("""
     ### Pre-Audit Checklist
-    For an accurate diagnostic, your input should include the task description, learning outcomes, and submission formats.
+    Include the task description, learning outcomes, and submission formats for accurate results.
     
     ### How to Use These Results
-    1. **Reflect**: Critically analyse the system generated critiques. Are they fair?
-    2. **Dialogue**: Utilise the dialogue questions within staff meetings or student representative forums.
-    3. **Redesign**: Focus intervention on categories marked in **Red** (Vulnerable).
+    1. **Reflect**: Critically analyse the system generated critiques.
+    2. **Dialogue**: Use the dialogue questions in staff or student representative forums.
+    3. **Redesign**: Focus on categories marked in **Red** (Vulnerable).
     """)
-    st.markdown("[More details here](https://samillingworth.substack.com/) (Open Access Resource)")
-with col2:
+    st.markdown("[Slow AI Substack](https://samillingworth.substack.com/)")
+with col_info2:
     st.info("**The Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
 
 st.divider()
 
-with st.sidebar:
-    st.header("Authentication")
-    api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
+# 5. Form Block to Prevent Rerunning
+with st.form("audit_form"):
+    st.subheader("1. Setup")
+    setup_col1, setup_col2 = st.columns(2)
+    with setup_col1:
+        email_user = st.text_input("Your Email (required):")
+    with setup_col2:
+        expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
+    
+    st.subheader("2. Assessment Input")
+    input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"])
+    
+    uploaded_file = None
+    if input_type == "File Upload":
+        uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"])
+    raw_input = st.text_area("Paste Content or Public URL:", height=200)
+    
+    st.subheader("3. Authentication")
+    user_api_key = st.text_input("Gemini API Key:", type="password")
+    
+    submit_button = st.form_submit_button("Generate Diagnostic Report")
 
-st.subheader("2. Assessment Input")
-input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"], key="in_type")
-text_content = ""
-if input_type == "File Upload":
-    uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"], key="up_k")
-    if uploaded_file: text_content = extract_text(uploaded_file)
-else:
-    raw_input = st.text_area("Paste Content or Public URL:", height=300, key="txt_area")
-    if raw_input.startswith("http"):
-        with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
-    else: text_content = raw_input
-
-# 5. Execution
-if text_content and email_user and api_key:
-    if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Initiating structural enquiry..."):
-            try:
-                # Use cached model object to prevent quota leaks
-                model = get_audit_model(api_key)
-                
-                prompt = f"""
-                You are Professor Sam Illingworth. Perform a combined triage and audit.
-                
-                STEP 1: IDENTIFICATION
-                Scan text for substantive assessment instructions (Portfolio, Exam, Essay). 
-                Identify the task with highest credit weighting. If none, return JSON error.
-                
-                STEP 2: AUDIT
-                Analyse that task using the 10 categories of Integrity Debt. 
-                RULES: Ground results in text; state "No evidence found" if absent; lock temperature 0.0; ignore metadata.
-                
-                Return ONLY a valid JSON object.
-                
-                Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
-                Text: {text_content[:7000]}
-                """
-                
-                response = model.generate_content(prompt)
-                json_payload = clean_json_string(response.text)
-                raw_results = json.loads(json_payload)
-                
-                if raw_results.get("status") == "error":
-                    st.error(raw_results.get("message"))
-                else:
-                    results = raw_results.get("audit_results", {})
-                    doc_context = raw_results.get("doc_context", "N/A")
-                    top_imps = raw_results.get("top_improvements", ["N/A", "N/A", "N/A"])
+# 6. Execution Logic
+if submit_button:
+    if not user_api_key or not email_user:
+        st.error("Email and API Key are required.")
+    else:
+        # Resolve text content inside submission block
+        final_text = ""
+        if input_type == "File Upload" and uploaded_file:
+            final_text = extract_text(uploaded_file)
+        elif raw_input.startswith("http"):
+            final_text = scrape_url(raw_input)
+        else:
+            final_text = raw_input
+            
+        if not final_text:
+            st.error("No assessment content provided.")
+        else:
+            with st.spinner("Analysing assessment integrity..."):
+                try:
+                    # Execute Cached API call
+                    raw_response = run_audit_api(user_api_key, final_text)
+                    results_json = json.loads(clean_json_string(raw_response))
+                    
+                    results = results_json.get("audit_results", {})
+                    doc_context = results_json.get("doc_context", "N/A")
+                    top_imps = results_json.get("top_improvements", ["N/A", "N/A", "N/A"])
                     total_score = sum([int(v.get('score', 0)) for v in results.values()])
                     actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                     
                     st.divider()
                     st.info(f"**Diagnostic Focus:** {doc_context}")
                     st.subheader(f"Total Integrity Score: {total_score}/50 ({actual_cat} Susceptibility)")
-                    st.markdown("#### Top 3 Priority Improvements")
-                    for imp in top_imps: st.write(f"* {imp}")
                     
-                    st.divider()
                     for cat, data in results.items():
                         score = int(data.get('score', 0))
                         if score == 5: st.success(f"🟢 {cat} (Score: {score}/5)")
@@ -232,24 +219,14 @@ if text_content and email_user and api_key:
                         st.write(f"**Critique:** {data.get('critique', 'N/A')}")
 
                     pdf = IntegrityPDF()
-                    pdf.alias_nb_pages(); pdf.add_page()
+                    pdf.add_page()
                     pdf.add_summary(actual_cat, total_score, top_imps, doc_context)
                     for cat, data in results.items():
                         pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                     
-                    pdf.add_page(); pdf.set_font('helvetica', 'B', 14); pdf.cell(0, 10, "Curriculum Redesign and Consultancy", 0, 1)
-                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
-                    pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.substack.com/", 0, 1)
-                    pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
-                    
-                    st.download_button("Download Full PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf", mime="application/pdf", key="dl_k")
+                    st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
 
-            except exceptions.ResourceExhausted:
-                st.error("API Quota exceeded. Please wait sixty seconds for the limit to reset.")
-            except Exception as e:
-                st.error(f"Audit failed: {e}")
-elif not api_key:
-    st.warning("Please provide a Gemini API Key in the sidebar to proceed.")
-else:
-    if not email_user:
-        st.info("Please enter your email address in the **Setup** section to proceed.")
+                except exceptions.ResourceExhausted:
+                    st.error("The API quota is full. This usually resets every sixty seconds.")
+                except Exception as e:
+                    st.error(f"Audit failed: {e}")
