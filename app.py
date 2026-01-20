@@ -8,6 +8,7 @@ import io
 import requests
 from bs4 import BeautifulSoup
 import time
+import re
 from google.api_core import exceptions
 
 # 1. Configuration and Mobile CSS
@@ -101,6 +102,12 @@ def scrape_url(url):
         return "\n".join([t.get_text() for t in tags])
     except Exception as e: return f"Error retrieving web content: {str(e)}"
 
+def clean_json_string(raw_string):
+    """Sanitize string to prevent delimiter and quote errors during JSON parsing."""
+    # Remove markdown code blocks if present
+    cleaned = re.sub(r'```json\s*|\s*```', '', raw_string).strip()
+    return cleaned
+
 # 4. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory and are never stored. No database of assessments is created.")
@@ -132,7 +139,7 @@ with col1:
     
     ### How to Use These Results
     1. **Reflect**: Critically analyse the system generated critiques. Are they fair?
-    2. **Dialogue**: Utilise the dialogue questions with staff meetings or student representative forums.
+    2. **Dialogue**: Utilise the dialogue questions within staff meetings or student representative forums.
     3. **Redesign**: Focus intervention on categories marked in **Red** (Vulnerable).
     """)
     st.markdown("[More details here](https://samillingworth.gumroad.com/l/integrity-debt-audit) (Open Access Resource)")
@@ -159,7 +166,7 @@ else:
         with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
     else: text_content = raw_input
 
-# 5. Execution with Rate Limit and Dynamic Model Handling
+# 5. Execution with Robust Error Handling
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
         with st.spinner("Identifying structural vulnerabilities..."):
@@ -168,21 +175,25 @@ if text_content and email_user:
             RULES: 
             1. Parse Learning Outcomes and Task Descriptions. 
             2. CATEGORY RECENCY: Ignore file dates; focus on whether the task requires live/current data engagement.
-            3. Ignore administrative metadata.
-            Return ONLY a JSON object: {{"audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
+            3. Ensure all double quotes within strings are escaped using a backslash to prevent JSON parsing failures.
+            4. Return ONLY a valid JSON object.
+            
+            JSON Structure: {{"audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
             Text: {text_content[:15000]}
             """
             
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    # Resolve errors by dynamic model selection
+                    # Resolve model selection dynamically to prevent 404 errors
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
                     model = genai.GenerativeModel(model_name)
                     
                     response = model.generate_content(prompt)
-                    raw_results = json.loads(response.text.replace('```json', '').replace('```', '').strip())
+                    # Use the new cleaning utility before parsing
+                    json_payload = clean_json_string(response.text)
+                    raw_results = json.loads(json_payload)
                     
                     results = raw_results.get("audit_results", {})
                     top_imps = raw_results.get("top_improvements", ["N/A", "N/A", "N/A"])
@@ -222,6 +233,9 @@ if text_content and email_user:
                         time.sleep(30)
                     else:
                         st.error("API Quota exceeded. Please try again in one minute.")
+                except json.JSONDecodeError as je:
+                    st.error(f"Structural formatting error in synthetic response. Retrying... ({je})")
+                    time.sleep(2)
                 except Exception as e:
                     st.error(f"Audit failed: {e}")
                     break
