@@ -82,7 +82,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(0, 0, 0)
         self.ln(5)
 
-# 3. Utilities with Session State
+# 3. Utilities
 def extract_text(uploaded_file):
     text = ""
     try:
@@ -152,19 +152,10 @@ with col2:
 
 st.divider()
 
+# Sidebar for Authentication ONLY
 with st.sidebar:
     st.header("Authentication")
     api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
-    if api_key:
-        genai.configure(api_key=api_key)
-        # Session State for model resolution to save quota
-        if 'target_model' not in st.session_state:
-            try:
-                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                st.session_state.target_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
-            except:
-                st.session_state.target_model = 'gemini-1.5-flash'
-    else: st.stop()
 
 st.subheader("2. Assessment Input")
 input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"], key="in_type")
@@ -178,29 +169,41 @@ else:
         with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
     else: text_content = raw_input
 
-# 5. Execution
-if text_content and email_user:
+# 5. Execution (Rigidly Gate-kept)
+if text_content and email_user and api_key:
     if st.button("Generate Diagnostic Report", key="run_k"):
         with st.spinner("Analysing assessment integrity..."):
-            prompt = f"""
-            You are Professor Sam Illingworth. Perform a combined triage and audit.
-            
-            STEP 1: IDENTIFICATION
-            Scan text for substantive assessment instructions (Portfolio, Exam, Essay). 
-            Identify the task with highest credit weighting. If none, return JSON error.
-            
-            STEP 2: AUDIT
-            Analyse that task using the 10 categories of Integrity Debt. 
-            RULES: Ground in text; state "No evidence found" if absent; lock temperature 0.0; ignore metadata.
-            
-            Return ONLY a valid JSON object.
-            
-            Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
-            Text: {text_content[:8000]}
-            """
-            
             try:
-                model = genai.GenerativeModel(st.session_state.target_model, generation_config={"temperature": 0.0})
+                # Setup model only when button is pressed to save quota
+                genai.configure(api_key=api_key)
+                # Hardcoded stable identifier to prevent 404/Quota waste
+                model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
+                
+                prompt = f"""
+                You are Professor Sam Illingworth. Perform a combined triage and audit on the provided text.
+                
+                STEP 1: IDENTIFICATION
+                Scan text to identify substantive assessment instructions (Portfolio, Exam, Essay). 
+                - Identify the task with highest credit weighting or most substantive description. 
+                - If no assessment is found, return a JSON error.
+                
+                STEP 2: AUDIT
+                Analyse that specific task using the 10 categories of Integrity Debt. 
+                RULES: Ground exclusively in text; state "No evidence found" if absent; lock temperature at 0.0; ignore file metadata.
+                
+                Return ONLY a valid JSON object.
+                
+                JSON Structure: 
+                {{
+                    "status": "success",
+                    "doc_context": "Identification of the specific task audited",
+                    "audit_results": {{cat: {{score, critique, question, quote}}}}, 
+                    "top_improvements": [str, str, str]
+                }}
+                
+                Text: {text_content[:8000]}
+                """
+                
                 response = model.generate_content(prompt)
                 json_payload = clean_json_string(response.text)
                 raw_results = json.loads(json_payload)
@@ -235,7 +238,7 @@ if text_content and email_user:
                         pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                     
                     pdf.add_page(); pdf.set_font('helvetica', 'B', 14); pdf.cell(0, 10, "Curriculum Redesign and Consultancy", 0, 1)
-                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
+                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
                     pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.substack.com/", 0, 1)
                     pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
                     
@@ -245,6 +248,8 @@ if text_content and email_user:
                 st.error("API Quota exceeded. Please wait 60 seconds for the limit to reset.")
             except Exception as e:
                 st.error(f"Audit failed: {e}")
+elif not api_key:
+    st.warning("Please provide a Gemini API Key in the sidebar to proceed.")
 else:
     if not email_user:
         st.info("Please enter your email address in the **Setup** section to proceed.")
