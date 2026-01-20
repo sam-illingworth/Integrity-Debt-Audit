@@ -171,16 +171,11 @@ if text_content and email_user:
             prompt = f"""
             You are Professor Sam Illingworth. Analyse the provided assessment brief using the 10 categories of Integrity Debt.
             
-            STRICT ADHERENCE RULES:
-            1. Ground your analysis exclusively in the provided text. Do not infer institutional policies, local contexts, or student characteristics that are not explicitly stated.
-            2. Distinguish clearly between what is known from the text, what is unclear, and what is inferred. 
-            3. If a category (e.g., Collaborative, Reflection, or Defence) is not addressed in the text, you must state that the information is absent. Do not invent details.
+            VALIDATION RULES (Deterministic Integrity):
+            1. GROUNDED CHECK: Your analysis must be grounded exclusively in the provided text. After generating your report, verify every critique against the source. If the text does not contain specific details for a category, you MUST state "No evidence found in text."
+            2. ZERO HALLUCINATION: Do not infer institutional names, course levels, or student contexts not explicitly stated.
+            3. CONSISTENCY: Maintain a deterministic approach. If this task is analysed multiple times, the output should remain identical.
             4. CATEGORY RECENCY: Ignore document metadata. Assess only if the task requires students to respond to live data or events occurring after the brief was issued.
-            
-            OUTPUT RULES:
-            - Return ONLY a valid JSON object.
-            - Provide a direct quote from the text as evidence for every category. 
-            - Escape all double quotes within the JSON strings.
             
             JSON Structure: {{"audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
             Brief Text: {text_content[:15000]}
@@ -191,7 +186,9 @@ if text_content and email_user:
                 try:
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
-                    model = genai.GenerativeModel(model_name)
+                    
+                    # Set temperature to 0.0 for deterministic/repeatable results
+                    model = genai.GenerativeModel(model_name, generation_config={"temperature": 0.0})
                     
                     response = model.generate_content(prompt)
                     json_payload = clean_json_string(response.text)
