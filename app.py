@@ -82,7 +82,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(0, 0, 0)
         self.ln(5)
 
-# 3. Functions
+# 3. Utilities
 def extract_text(uploaded_file):
     text = ""
     try:
@@ -112,7 +112,6 @@ def clean_json_string(raw_string):
 @st.cache_data(show_spinner=False)
 def run_audit_api(api_key, text):
     genai.configure(api_key=api_key)
-    # Registry lookup wrapped in try-except to handle versioning
     try:
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         target = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
@@ -138,7 +137,6 @@ st.markdown("""
 Complete the setup fields below. This tool remains inert until you click the final button.
 """)
 
-# INSTRUCTIONAL BLOCK RESTORED
 col_info1, col_info2 = st.columns([2, 1])
 with col_info1:
     st.markdown("""
@@ -156,7 +154,7 @@ with col_info2:
 
 st.divider()
 
-# 5. Form Block to Prevent Rerunning
+# 5. Form Block for Formality and Stability
 with st.form("audit_form"):
     st.subheader("1. Setup")
     setup_col1, setup_col2 = st.columns(2)
@@ -173,17 +171,18 @@ with st.form("audit_form"):
         uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"])
     raw_input = st.text_area("Paste Content or Public URL:", height=200)
     
-    st.subheader("3. Authentication")
-    user_api_key = st.text_input("Gemini API Key:", type="password")
-    
     submit_button = st.form_submit_button("Generate Diagnostic Report")
 
 # 6. Execution Logic
+# Automatically use API key from Streamlit Secrets
+api_key = st.secrets.get("GEMINI_API_KEY")
+
 if submit_button:
-    if not user_api_key or not email_user:
-        st.error("Email and API Key are required.")
+    if not api_key:
+        st.error("API Key not found in Secrets. Please configure GEMINI_API_KEY.")
+    elif not email_user:
+        st.error("Email is required.")
     else:
-        # Resolve text content inside submission block
         final_text = ""
         if input_type == "File Upload" and uploaded_file:
             final_text = extract_text(uploaded_file)
@@ -197,8 +196,7 @@ if submit_button:
         else:
             with st.spinner("Analysing assessment integrity..."):
                 try:
-                    # Execute Cached API call
-                    raw_response = run_audit_api(user_api_key, final_text)
+                    raw_response = run_audit_api(api_key, final_text)
                     results_json = json.loads(clean_json_string(raw_response))
                     
                     results = results_json.get("audit_results", {})
@@ -227,6 +225,6 @@ if submit_button:
                     st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
 
                 except exceptions.ResourceExhausted:
-                    st.error("The API quota is full. This usually resets every sixty seconds.")
+                    st.error("The API quota is full. Please wait sixty seconds.")
                 except Exception as e:
                     st.error(f"Audit failed: {e}")
