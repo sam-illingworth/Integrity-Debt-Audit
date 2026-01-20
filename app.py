@@ -171,11 +171,15 @@ else:
 # 5. Execution
 if text_content and email_user and api_key:
     if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Analysing assessment integrity..."):
+        with st.spinner("Synchronising with synthetic endpoints..."):
             try:
                 genai.configure(api_key=api_key)
-                # Triage and Audit in a single call to save quota
-                model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
+                # DYNAMIC MODEL DISCOVERY: 
+                # Fetches exactly what your API key is allowed to use.
+                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                target_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
+                
+                model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
                 
                 prompt = f"""
                 You are Professor Sam Illingworth. Perform a combined triage and audit.
