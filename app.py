@@ -11,19 +11,18 @@ import time
 import re
 from google.api_core import exceptions
 
-# 1. Configuration and Mobile CSS
+# 1. Configuration
 st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: white; color: black; }
     header {visibility: hidden;}
-    .reportview-container { background: white; }
     p, span, h1, h2, h3, h4, li { color: black !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. PDF Report Generator Class
+# 2. PDF Class
 class IntegrityPDF(FPDF):
     def __init__(self):
         super().__init__()
@@ -33,8 +32,6 @@ class IntegrityPDF(FPDF):
     def header(self):
         self.set_font('helvetica', 'B', 16)
         self.cell(0, 10, 'Integrity Debt Audit Report', 0, 1, 'C')
-        self.set_font('helvetica', 'I', 10)
-        self.cell(0, 10, 'Framework by Professor Sam Illingworth (2026)', 0, 1, 'C')
         self.ln(10)
 
     def footer(self):
@@ -43,7 +40,6 @@ class IntegrityPDF(FPDF):
         self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', 0, 0, 'C')
 
     def safe_text(self, text):
-        if not text: return "N/A"
         mapping = {150: ',', 151: ',', 8211: ',', 8212: ',', 8216: "'", 8217: "'", 8220: '"', 8221: '"', 8230: '...'}
         return str(text).translate(mapping).encode('latin-1', 'ignore').decode('latin-1')
 
@@ -54,113 +50,40 @@ class IntegrityPDF(FPDF):
         self.multi_cell(0, 8, f"Identified Assessment: {self.safe_text(doc_context)}")
         self.cell(0, 8, f"Total Integrity Score: {score}/50", 0, 1)
         self.cell(0, 8, f"Actual Susceptibility: {actual}", 0, 1)
-        self.ln(2)
-        self.set_font('helvetica', 'B', 10)
-        self.cell(0, 8, "Top 3 Priority Improvements:", 0, 1)
-        self.set_font('helvetica', '', 10)
-        for imp in improvements:
-            self.multi_cell(0, 6, f"* {self.safe_text(imp)}")
-            self.ln(2)
         self.ln(5)
 
     def add_category(self, name, score, critique, question, quote):
-        if score == 5: self.set_fill_color(200, 255, 200) 
-        elif score >= 3: self.set_fill_color(255, 255, 200) 
-        else: self.set_fill_color(255, 200, 200) 
+        self.set_fill_color(240, 240, 240)
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, f" {self.safe_text(name)} (Score: {score}/5)", 1, 1, 'L', 1)
-        self.ln(2)
         self.set_font('helvetica', '', 10)
         self.multi_cell(0, 6, f"Critique: {self.safe_text(critique)}")
-        self.ln(1)
-        self.set_font('helvetica', 'I', 10)
-        self.multi_cell(0, 6, f"Dialogue Question: {self.safe_text(question)}")
         self.ln(2)
-        self.set_font('helvetica', '', 8)
-        self.set_text_color(100, 100, 100)
-        self.multi_cell(0, 5, f"Evidence: \"{self.safe_text(quote)}\"")
-        self.set_text_color(0, 0, 0)
-        self.ln(5)
 
-# 3. Utilities
+# 3. Functions
 def extract_text(uploaded_file):
     text = ""
-    try:
-        if uploaded_file.name.endswith('.pdf'):
-            reader = PdfReader(uploaded_file)
-            for page in reader.pages: text += page.extract_text() or ""
-        elif uploaded_file.name.endswith('.docx'):
-            doc = Document(uploaded_file)
-            for para in doc.paragraphs: text += para.text + "\n"
-    except Exception as e: st.error(f"Extraction error: {e}")
+    if uploaded_file.name.endswith('.pdf'):
+        reader = PdfReader(uploaded_file)
+        for page in reader.pages: text += page.extract_text() or ""
+    elif uploaded_file.name.endswith('.docx'):
+        doc = Document(uploaded_file)
+        for para in doc.paragraphs: text += para.text + "\n"
     return text
 
-def scrape_url(url):
-    try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])
-        content = "\n".join([t.get_text() for t in tags])
-        if not content.strip(): return "No readable text found at URL."
-        return content
-    except Exception as e: return f"Error retrieving web content: {str(e)}"
-
 def clean_json_string(raw_string):
-    try:
-        match = re.search(r'\{.*\}', raw_string, re.DOTALL)
-        if match: return match.group(0)
-        return raw_string.strip()
-    except: return raw_string.strip()
+    match = re.search(r'\{.*\}', raw_string, re.DOTALL)
+    return match.group(0) if match else raw_string.strip()
 
-# Persistent Model Discovery to save Quota
-@st.cache_resource
-def get_target_model(api_key):
-    genai.configure(api_key=api_key)
-    try:
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        for m in models:
-            if '1.5-flash' in m: return m
-        return models[0]
-    except:
-        return 'gemini-1.5-flash'
-
-# 4. Interface and Explainer
+# 4. Interface
 st.title("Integrity Debt Diagnostic")
-st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory and are never stored. No database of assessments is created.")
-
-st.markdown("""
-### How to run this diagnostic
-To begin the audit, you must first complete the **Setup** section below.
-1. Provide your **Email Address** for the final report.
-2. Select your **Predicted Susceptibility** (how vulnerable you believe the assessment is to AI).
-3. Once these are set, upload your file or paste your content to generate the report.
-""")
-
-st.divider()
 
 st.subheader("1. Setup")
 setup_col1, setup_col2 = st.columns(2)
 with setup_col1:
-    email_user = st.text_input("Your Email (required for report):", key="em_k")
+    email_user = st.text_input("Your Email:", key="em_k")
 with setup_col2:
-    expectation = st.selectbox("Predicted Susceptibility (required):", ["Low", "Medium", "High"], key="exp_k")
-
-st.divider()
-
-col1, col2 = st.columns([2, 1])
-with col1:
-    st.markdown("""
-    ### Pre-Audit Checklist
-    For an accurate diagnostic, your input should include the task description, learning outcomes, and submission formats.
-    
-    ### How to Use These Results
-    1. **Reflect**: Critically analyse the system generated critiques. Are they fair?
-    2. **Dialogue**: Utilise the dialogue questions within staff meetings or student representative forums.
-    3. **Redesign**: Focus intervention on categories marked in **Red** (Vulnerable).
-    """)
-    st.markdown("[More details here](https://samillingworth.substack.com/) (Open Access Resource)")
-with col2:
-    st.info("**The Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
+    expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"], key="exp_k")
 
 st.divider()
 
@@ -169,88 +92,65 @@ with st.sidebar:
     api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
 
 st.subheader("2. Assessment Input")
-input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"], key="in_type")
+input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text"], key="in_type")
 text_content = ""
 if input_type == "File Upload":
     uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"], key="up_k")
     if uploaded_file: text_content = extract_text(uploaded_file)
 else:
-    raw_input = st.text_area("Paste Content or Public URL:", height=300, key="txt_area")
-    if raw_input.startswith("http"):
-        with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
-    else: text_content = raw_input
+    text_content = st.text_area("Paste Content:", height=300, key="txt_area")
 
 # 5. Execution
-if text_content and email_user and api_key:
-    if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Executing structural audit..."):
+if st.button("Generate Diagnostic Report", key="run_k"):
+    if not api_key:
+        st.error("Please provide an API Key.")
+    elif not text_content or not email_user:
+        st.error("Please provide email and assessment content.")
+    else:
+        with st.spinner("Engaging with synthetic system..."):
             try:
-                target_model = get_target_model(api_key)
+                genai.configure(api_key=api_key)
+                # Static fallback to minimize quota-heavy discovery calls
+                target_model = 'gemini-1.5-flash'
                 model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
                 
                 prompt = f"""
-                You are Professor Sam Illingworth. Perform a combined triage and audit.
-                
-                STEP 1: IDENTIFICATION
-                Scan text for substantive assessment instructions (Portfolio, Exam, Essay). 
-                Identify the task with highest credit weighting. If none, return JSON error.
-                
-                STEP 2: AUDIT
-                Analyse that task using the 10 categories of Integrity Debt. 
-                RULES: Ground in text; state "No evidence found" if absent; lock temperature 0.0; ignore metadata.
-                
-                Return ONLY a valid JSON object.
-                
-                Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
-                Text: {text_content[:6000]}
+                You are Professor Sam Illingworth. Perform a triage and audit.
+                STEP 1: Identify the most substantive assessment task.
+                STEP 2: Audit that task using the 10 categories of Integrity Debt.
+                Ground results in text. Return ONLY a JSON object.
+                Structure: {{"status": "success", "doc_context": "Title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
+                Text: {text_content[:7000]}
                 """
                 
                 response = model.generate_content(prompt)
-                json_payload = clean_json_string(response.text)
-                raw_results = json.loads(json_payload)
+                raw_results = json.loads(clean_json_string(response.text))
                 
-                if raw_results.get("status") == "error":
-                    st.error(raw_results.get("message"))
-                else:
+                if raw_results.get("status") == "success":
                     results = raw_results.get("audit_results", {})
                     doc_context = raw_results.get("doc_context", "N/A")
                     top_imps = raw_results.get("top_improvements", ["N/A", "N/A", "N/A"])
                     total_score = sum([int(v.get('score', 0)) for v in results.values()])
                     actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                     
-                    st.divider()
                     st.info(f"**Diagnostic Focus:** {doc_context}")
-                    st.subheader(f"Total Integrity Score: {total_score}/50 ({actual_cat} Susceptibility)")
-                    st.markdown("#### Top 3 Priority Improvements")
-                    for imp in top_imps: st.write(f"* {imp}")
+                    st.subheader(f"Total Integrity Score: {total_score}/50")
                     
-                    st.divider()
                     for cat, data in results.items():
-                        score = int(data.get('score', 0))
-                        if score == 5: st.success(f"🟢 {cat} (Score: {score}/5)")
-                        elif score >= 3: st.warning(f"🟡 {cat} (Score: {score}/5)")
-                        else: st.error(f"🔴 {cat} (Score: {score}/5)")
-                        st.write(f"**Critique:** {data.get('critique', 'N/A')}")
-
+                        with st.expander(f"{cat} (Score: {data['score']}/5)"):
+                            st.write(data['critique'])
+                    
                     pdf = IntegrityPDF()
-                    pdf.alias_nb_pages(); pdf.add_page()
+                    pdf.add_page()
                     pdf.add_summary(actual_cat, total_score, top_imps, doc_context)
                     for cat, data in results.items():
                         pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                     
-                    pdf.add_page(); pdf.set_font('helvetica', 'B', 14); pdf.cell(0, 10, "Curriculum Redesign and Consultancy", 0, 1)
-                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
-                    pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.substack.com/", 0, 1)
-                    pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
+                    st.download_button("Download PDF", data=bytes(pdf.output()), file_name="Audit.pdf")
+                else:
+                    st.error("No assessment found.")
                     
-                    st.download_button("Download Full PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf", mime="application/pdf", key="dl_k")
-
             except exceptions.ResourceExhausted:
-                st.error("API Quota exceeded. Please wait 60 seconds for the limit to reset.")
+                st.error("The API quota is full. Please wait exactly 60 seconds and try again.")
             except Exception as e:
-                st.error(f"Audit failed: {e}")
-elif not api_key:
-    st.warning("Please provide a Gemini API Key in the sidebar to proceed.")
-else:
-    if not email_user:
-        st.info("Please enter your email address in the **Setup** section to proceed.")
+                st.error(f"Error: {e}")
