@@ -179,7 +179,7 @@ if text_content and email_user:
             
             STEP 1: IDENTIFICATION
             Scan the text to identify substantive assessment instructions (e.g., Portfolio, Examination, Essay). 
-            - Identify the assessment with the highest credit weighting or most substantive description. 
+            - Identify the task with highest credit weighting or most substantive description. 
             - If no assessment is found, return a JSON error.
             
             STEP 2: AUDIT
@@ -196,14 +196,17 @@ if text_content and email_user:
                 "top_improvements": [str, str, str]
             }}
             
-            Text: {text_content[:20000]}
+            Text: {text_content[:10000]}
             """
             
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    # Identifier corrected to gemini-1.5-flash-latest for v1beta compatibility
-                    model = genai.GenerativeModel('gemini-1.5-flash-latest', generation_config={"temperature": 0.0})
+                    # Resolve model name dynamically
+                    models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                    target_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
+                    
+                    model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
                     
                     response = model.generate_content(prompt)
                     json_payload = clean_json_string(response.text)
