@@ -47,10 +47,11 @@ class IntegrityPDF(FPDF):
         mapping = {150: ',', 151: ',', 8211: ',', 8212: ',', 8216: "'", 8217: "'", 8220: '"', 8221: '"', 8230: '...'}
         return str(text).translate(mapping).encode('latin-1', 'ignore').decode('latin-1')
 
-    def add_summary(self, actual, score, improvements):
+    def add_summary(self, actual, score, improvements, doc_context):
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, "Executive Summary", 0, 1)
         self.set_font('helvetica', '', 10)
+        self.multi_cell(0, 8, f"Document Context: {self.safe_text(doc_context)}")
         self.cell(0, 8, f"Total Integrity Score: {score}/50", 0, 1)
         self.cell(0, 8, f"Actual Susceptibility: {actual}", 0, 1)
         self.ln(2)
@@ -100,20 +101,16 @@ def scrape_url(url):
         soup = BeautifulSoup(response.text, 'html.parser')
         tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])
         content = "\n".join([t.get_text() for t in tags])
-        if not content.strip():
-            return "No readable text found at URL. Please paste content manually."
+        if not content.strip(): return "No readable text found at URL."
         return content
     except Exception as e: return f"Error retrieving web content: {str(e)}"
 
 def clean_json_string(raw_string):
-    """Locate and extract the first JSON object found in the response to prevent padding errors."""
     try:
         match = re.search(r'\{.*\}', raw_string, re.DOTALL)
-        if match:
-            return match.group(0)
+        if match: return match.group(0)
         return raw_string.strip()
-    except:
-        return raw_string.strip()
+    except: return raw_string.strip()
 
 # 4. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
@@ -176,22 +173,29 @@ else:
 # 5. Execution
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Identifying structural vulnerabilities..."):
+        with st.spinner("Triaging document and identifying assessment tasks..."):
             prompt = f"""
-            You are Professor Sam Illingworth. Analyse the provided assessment brief using the 10 categories of Integrity Debt.
+            You are Professor Sam Illingworth. Perform a two-step analysis on the provided text.
             
-            STRICT VALIDATION RULES (Deterministic Integrity):
-            1. GROUNDED CHECK: Your analysis must be grounded exclusively in the provided text. After generating your report, verify every critique against the source. If the text does not contain specific details for a category, you MUST state "No evidence found in text."
-            2. ZERO HALLUCINATION: Do not infer institutional policies, local contexts, or student characteristics not explicitly stated.
-            3. CONSISTENCY: Maintain a deterministic approach. Temperature is locked at 0.0. If this task is analysed multiple times, the output must remain identical.
-            4. CATEGORY RECENCY: Ignore document metadata/timestamps. Check only if the task requires post-briefing live data.
+            STEP 1: TRIAGE
+            Check if the text contains a specific assessment brief (task description, learning outcomes, or rubric). 
+            - If the text is a general handbook or administrative document without a specific assignment task, return ONLY a JSON object with: {{"status": "error", "message": "No specific assessment brief identified. Please upload an individual assignment brief rather than a general handbook."}}
+            - If multiple assessments are found, extract and focus ONLY on the most prominent one.
             
-            OUTPUT RULES:
-            - Return ONLY a valid JSON object.
-            - Provide a direct quote from the text as evidence for every category. 
-            - Escape all double quotes within the JSON strings.
+            STEP 2: AUDIT (ONLY if Step 1 is successful)
+            Analyse the extracted task using the 10 categories of Integrity Debt. 
+            RULES: Ground exclusively in text; state "No evidence" if absent; lock temperature at 0.0; ignore file metadata.
             
-            Structure: {{"audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
+            Return ONLY a valid JSON object.
+            
+            JSON Structure: 
+            {{
+                "status": "success",
+                "doc_context": "Brief summary of which specific assignment was extracted from the text",
+                "audit_results": {{cat: {{score, critique, question, quote}}}}, 
+                "top_improvements": [str, str, str]
+            }}
+            
             Text: {text_content[:15000]}
             """
             
@@ -200,23 +204,24 @@ if text_content and email_user:
                 try:
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
-                    
-                    # Lock temperature at 0.0 for deterministic outputs
                     model = genai.GenerativeModel(model_name, generation_config={"temperature": 0.0})
                     
                     response = model.generate_content(prompt)
-                    if not response.text:
-                        raise ValueError("Empty response from system.")
-                        
                     json_payload = clean_json_string(response.text)
                     raw_results = json.loads(json_payload)
                     
+                    if raw_results.get("status") == "error":
+                        st.error(raw_results.get("message"))
+                        break
+                    
                     results = raw_results.get("audit_results", {})
+                    doc_context = raw_results.get("doc_context", "N/A")
                     top_imps = raw_results.get("top_improvements", ["N/A", "N/A", "N/A"])
                     total_score = sum([int(v.get('score', 0)) for v in results.values()])
                     actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                     
                     st.divider()
+                    st.info(f"**Diagnostic Focus:** {doc_context}")
                     st.subheader(f"Total Integrity Score: {total_score}/50 ({actual_cat} Susceptibility)")
                     st.markdown("#### Top 3 Priority Improvements")
                     for imp in top_imps: st.write(f"* {imp}")
@@ -231,12 +236,12 @@ if text_content and email_user:
 
                     pdf = IntegrityPDF()
                     pdf.alias_nb_pages(); pdf.add_page()
-                    pdf.add_summary(actual_cat, total_score, top_imps)
+                    pdf.add_summary(actual_cat, total_score, top_imps, doc_context)
                     for cat, data in results.items():
                         pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                     
                     pdf.add_page(); pdf.set_font('helvetica', 'B', 14); pdf.cell(0, 10, "Curriculum Redesign and Consultancy", 0, 1)
-                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
+                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
                     pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.gumroad.com/l/integrity-debt-audit", 0, 1)
                     pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
                     
@@ -245,7 +250,7 @@ if text_content and email_user:
 
                 except exceptions.ResourceExhausted:
                     if i < max_retries - 1:
-                        st.warning(f"Rate limit reached. Retrying... (Attempt {i+1}/{max_retries})")
+                        st.warning("Rate limit reached. Retrying...")
                         time.sleep(30)
                     else:
                         st.error("API Quota exceeded. Please try again in one minute.")
@@ -254,7 +259,7 @@ if text_content and email_user:
                         st.warning("Structural formatting error. Retrying...")
                         time.sleep(2)
                     else:
-                        st.error("The system failed to generate a valid data structure. Please simplify the input text and try again.")
+                        st.error("The system failed to generate a valid data structure. Please simplify the input text.")
                 except Exception as e:
                     st.error(f"Audit failed: {e}")
                     break
