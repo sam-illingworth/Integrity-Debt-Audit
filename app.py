@@ -82,21 +82,19 @@ class IntegrityPDF(FPDF):
         self.set_text_color(0, 0, 0)
         self.ln(5)
 
-# 3. Utilities with Caching
-@st.cache_data
-def extract_text(file_content, file_name):
+# 3. Utilities with Session State
+def extract_text(uploaded_file):
     text = ""
     try:
-        if file_name.endswith('.pdf'):
-            reader = PdfReader(io.BytesIO(file_content))
+        if uploaded_file.name.endswith('.pdf'):
+            reader = PdfReader(uploaded_file)
             for page in reader.pages: text += page.extract_text() or ""
-        elif file_name.endswith('.docx'):
-            doc = Document(io.BytesIO(file_content))
+        elif uploaded_file.name.endswith('.docx'):
+            doc = Document(uploaded_file)
             for para in doc.paragraphs: text += para.text + "\n"
     except Exception as e: st.error(f"Extraction error: {e}")
     return text
 
-@st.cache_data
 def scrape_url(url):
     try:
         response = requests.get(url, timeout=10)
@@ -106,15 +104,6 @@ def scrape_url(url):
         if not content.strip(): return "No readable text found at URL."
         return content
     except Exception as e: return f"Error retrieving web content: {str(e)}"
-
-@st.cache_data
-def get_valid_model(api_key):
-    genai.configure(api_key=api_key)
-    try:
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        return 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
-    except:
-        return 'gemini-1.5-flash'
 
 def clean_json_string(raw_string):
     try:
@@ -166,7 +155,15 @@ st.divider()
 with st.sidebar:
     st.header("Authentication")
     api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
-    if api_key: genai.configure(api_key=api_key)
+    if api_key:
+        genai.configure(api_key=api_key)
+        # Session State for model resolution to save quota
+        if 'target_model' not in st.session_state:
+            try:
+                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                st.session_state.target_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
+            except:
+                st.session_state.target_model = 'gemini-1.5-flash'
     else: st.stop()
 
 st.subheader("2. Assessment Input")
@@ -174,49 +171,38 @@ input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL
 text_content = ""
 if input_type == "File Upload":
     uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"], key="up_k")
-    if uploaded_file: 
-        text_content = extract_text(uploaded_file.getvalue(), uploaded_file.name)
+    if uploaded_file: text_content = extract_text(uploaded_file)
 else:
     raw_input = st.text_area("Paste Content or Public URL:", height=300, key="txt_area")
     if raw_input.startswith("http"):
         with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
     else: text_content = raw_input
 
-# 5. Core Audit Execution (Cached)
-@st.cache_data(show_spinner=False)
-def get_audit_result(api_key, text):
-    genai.configure(api_key=api_key)
-    target_model = get_valid_model(api_key)
-    model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
-    
-    prompt = f"""
-    You are Professor Sam Illingworth. Perform a combined triage and audit on the provided text.
-    
-    STEP 1: IDENTIFICATION
-    Scan text to identify substantive assessment instructions (Portfolio, Exam, Essay). 
-    Locate the task with highest credit weighting or most substantive description. 
-    If none exist, return a JSON error.
-    
-    STEP 2: AUDIT
-    Analyse that specific task using the 10 categories of Integrity Debt. 
-    RULES: Ground exclusively in text; state "No evidence found" if absent; lock temperature at 0.0; ignore file metadata.
-    
-    Return ONLY a valid JSON object.
-    
-    Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
-    Text: {text[:8000]}
-    """
-    
-    response = model.generate_content(prompt)
-    return response.text
-
-# 6. UI Logic
+# 5. Execution
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
         with st.spinner("Analysing assessment integrity..."):
+            prompt = f"""
+            You are Professor Sam Illingworth. Perform a combined triage and audit.
+            
+            STEP 1: IDENTIFICATION
+            Scan text for substantive assessment instructions (Portfolio, Exam, Essay). 
+            Identify the task with highest credit weighting. If none, return JSON error.
+            
+            STEP 2: AUDIT
+            Analyse that task using the 10 categories of Integrity Debt. 
+            RULES: Ground in text; state "No evidence found" if absent; lock temperature 0.0; ignore metadata.
+            
+            Return ONLY a valid JSON object.
+            
+            Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
+            Text: {text_content[:8000]}
+            """
+            
             try:
-                raw_response = get_audit_result(api_key, text_content)
-                json_payload = clean_json_string(raw_response)
+                model = genai.GenerativeModel(st.session_state.target_model, generation_config={"temperature": 0.0})
+                response = model.generate_content(prompt)
+                json_payload = clean_json_string(response.text)
                 raw_results = json.loads(json_payload)
                 
                 if raw_results.get("status") == "error":
