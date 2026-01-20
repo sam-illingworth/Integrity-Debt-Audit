@@ -115,7 +115,6 @@ To begin the audit, you must first complete the **Setup** section below.
 
 st.divider()
 
-# Setup moved to the top of the main interface
 st.subheader("1. Setup")
 setup_col1, setup_col2 = st.columns(2)
 with setup_col1:
@@ -134,7 +133,6 @@ with col2:
 
 st.divider()
 
-# Authentication remaining in sidebar for security/cleanliness
 with st.sidebar:
     st.header("Authentication")
     api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
