@@ -175,15 +175,15 @@ if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
         with st.spinner("Analysing assessment integrity..."):
             prompt = f"""
-            You are Professor Sam Illingworth. Perform a combined triage and audit on the provided text.
+            You are Professor Sam Illingworth. Perform a combined triage and audit.
             
             STEP 1: IDENTIFICATION
-            Scan the text to identify substantive assessment instructions (e.g., Portfolio, Examination, Essay). 
-            - Identify the assessment with the highest credit weighting or most substantive description. 
-            - If no assessment is found, return a JSON error.
+            Scan text for substantive assessment instructions (Portfolio, Exam, Essay). 
+            Identify the task with highest credit weighting or word count. 
+            If none exist, return a JSON error.
             
             STEP 2: AUDIT
-            Analyse that specific task using the 10 categories of Integrity Debt. 
+            Analyse that task using the 10 categories of Integrity Debt. 
             RULES: Ground exclusively in text; state "No evidence found" if absent; lock temperature at 0.0; ignore file metadata.
             
             Return ONLY a valid JSON object.
@@ -191,12 +191,12 @@ if text_content and email_user:
             JSON Structure: 
             {{
                 "status": "success",
-                "doc_context": "Identification of the specific task audited",
+                "doc_context": "Title/description of task audited",
                 "audit_results": {{cat: {{score, critique, question, quote}}}}, 
                 "top_improvements": [str, str, str]
             }}
             
-            Text: {text_content[:20000]}
+            Text: {text_content[:10000]}
             """
             
             max_retries = 3
@@ -250,16 +250,10 @@ if text_content and email_user:
 
                 except exceptions.ResourceExhausted:
                     if i < max_retries - 1:
-                        st.warning("API quota reached. Please wait 60 seconds.")
+                        st.warning("API quota reached. System is waiting 60 seconds to reset.")
                         time.sleep(60)
                     else:
                         st.error("API Quota exceeded. Please try again later.")
-                except json.JSONDecodeError:
-                    if i < max_retries - 1:
-                        st.warning("Structural formatting error. Retrying...")
-                        time.sleep(2)
-                    else:
-                        st.error("The system failed to generate a valid data structure.")
                 except Exception as e:
                     st.error(f"Audit failed: {e}")
                     break
