@@ -99,12 +99,21 @@ def scrape_url(url):
         response = requests.get(url, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
         tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])
-        return "\n".join([t.get_text() for t in tags])
+        content = "\n".join([t.get_text() for t in tags])
+        if not content.strip():
+            return "No readable text found at URL. Please paste content manually."
+        return content
     except Exception as e: return f"Error retrieving web content: {str(e)}"
 
 def clean_json_string(raw_string):
-    cleaned = re.sub(r'```json\s*|\s*```', '', raw_string).strip()
-    return cleaned
+    """Locate and extract the first JSON object found in the response to prevent padding errors."""
+    try:
+        match = re.search(r'\{.*\}', raw_string, re.DOTALL)
+        if match:
+            return match.group(0)
+        return raw_string.strip()
+    except:
+        return raw_string.strip()
 
 # 4. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
@@ -171,14 +180,19 @@ if text_content and email_user:
             prompt = f"""
             You are Professor Sam Illingworth. Analyse the provided assessment brief using the 10 categories of Integrity Debt.
             
-            VALIDATION RULES (Deterministic Integrity):
+            STRICT VALIDATION RULES (Deterministic Integrity):
             1. GROUNDED CHECK: Your analysis must be grounded exclusively in the provided text. After generating your report, verify every critique against the source. If the text does not contain specific details for a category, you MUST state "No evidence found in text."
-            2. ZERO HALLUCINATION: Do not infer institutional names, course levels, or student contexts not explicitly stated.
-            3. CONSISTENCY: Maintain a deterministic approach. If this task is analysed multiple times, the output should remain identical.
-            4. CATEGORY RECENCY: Ignore document metadata. Assess only if the task requires students to respond to live data or events occurring after the brief was issued.
+            2. ZERO HALLUCINATION: Do not infer institutional policies, local contexts, or student characteristics not explicitly stated.
+            3. CONSISTENCY: Maintain a deterministic approach. Temperature is locked at 0.0. If this task is analysed multiple times, the output must remain identical.
+            4. CATEGORY RECENCY: Ignore document metadata/timestamps. Check only if the task requires post-briefing live data.
             
-            JSON Structure: {{"audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
-            Brief Text: {text_content[:15000]}
+            OUTPUT RULES:
+            - Return ONLY a valid JSON object.
+            - Provide a direct quote from the text as evidence for every category. 
+            - Escape all double quotes within the JSON strings.
+            
+            Structure: {{"audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
+            Text: {text_content[:15000]}
             """
             
             max_retries = 3
@@ -187,10 +201,13 @@ if text_content and email_user:
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
                     
-                    # Set temperature to 0.0 for deterministic/repeatable results
+                    # Lock temperature at 0.0 for deterministic outputs
                     model = genai.GenerativeModel(model_name, generation_config={"temperature": 0.0})
                     
                     response = model.generate_content(prompt)
+                    if not response.text:
+                        raise ValueError("Empty response from system.")
+                        
                     json_payload = clean_json_string(response.text)
                     raw_results = json.loads(json_payload)
                     
@@ -228,13 +245,16 @@ if text_content and email_user:
 
                 except exceptions.ResourceExhausted:
                     if i < max_retries - 1:
-                        st.warning(f"Rate limit reached. Retrying in 30 seconds... (Attempt {i+1}/{max_retries})")
+                        st.warning(f"Rate limit reached. Retrying... (Attempt {i+1}/{max_retries})")
                         time.sleep(30)
                     else:
                         st.error("API Quota exceeded. Please try again in one minute.")
-                except json.JSONDecodeError as je:
-                    st.error(f"Structural formatting error in response. Retrying... ({je})")
-                    time.sleep(2)
+                except json.JSONDecodeError:
+                    if i < max_retries - 1:
+                        st.warning("Structural formatting error. Retrying...")
+                        time.sleep(2)
+                    else:
+                        st.error("The system failed to generate a valid data structure. Please simplify the input text and try again.")
                 except Exception as e:
                     st.error(f"Audit failed: {e}")
                     break
