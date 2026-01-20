@@ -6,7 +6,7 @@ from docx import Document
 from fpdf import FPDF
 import io
 import requests
-from bs4 import BeautifulSoup
+from BeautifulSoup import BeautifulSoup
 import time
 from google.api_core import exceptions
 
@@ -159,7 +159,7 @@ else:
         with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
     else: text_content = raw_input
 
-# 5. Execution with Rate Limit Handling
+# 5. Execution with Rate Limit and Dynamic Model Handling
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
         with st.spinner("Identifying structural vulnerabilities..."):
@@ -176,8 +176,11 @@ if text_content and email_user:
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    # Updated to use the base model identifier to avoid 404 errors
-                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    # Resolve 404 by dynamic model selection
+                    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                    model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
+                    model = genai.GenerativeModel(model_name)
+                    
                     response = model.generate_content(prompt)
                     raw_results = json.loads(response.text.replace('```json', '').replace('```', '').strip())
                     
