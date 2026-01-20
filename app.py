@@ -173,17 +173,17 @@ else:
 # 5. Execution
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Triaging document and identifying assessment tasks..."):
+        with st.spinner("Identifying credit-bearing assessments..."):
             prompt = f"""
             You are Professor Sam Illingworth. Perform a two-step analysis on the provided text.
             
-            STEP 1: TRIAGE
-            Check if the text contains a specific assessment brief (task description, learning outcomes, or rubric). 
-            - If the text is a general handbook or administrative document without a specific assignment task, return ONLY a JSON object with: {{"status": "error", "message": "No specific assessment brief identified. Please upload an individual assignment brief rather than a general handbook."}}
-            - If multiple assessments are found, extract and focus ONLY on the most prominent one.
+            STEP 1: TRIAGE AND SELECTION
+            Scan the entire text to find specific assessment briefs (tasks, rubrics, or learning outcomes). 
+            - If no assessments are found, return ONLY a JSON object with: {{"status": "error", "message": "No specific assessment brief identified. Please upload an individual assignment brief rather than a general handbook."}}
+            - If multiple assessments are present, you must identify and select the assessment with the highest credit-bearing element or weighting. 
             
             STEP 2: AUDIT (ONLY if Step 1 is successful)
-            Analyse the extracted task using the 10 categories of Integrity Debt. 
+            Analyse the selected credit-bearing task using the 10 categories of Integrity Debt. 
             RULES: Ground exclusively in text; state "No evidence" if absent; lock temperature at 0.0; ignore file metadata.
             
             Return ONLY a valid JSON object.
@@ -191,12 +191,12 @@ if text_content and email_user:
             JSON Structure: 
             {{
                 "status": "success",
-                "doc_context": "Brief summary of which specific assignment was extracted from the text",
+                "doc_context": "Identification of the credit-bearing assessment selected for audit",
                 "audit_results": {{cat: {{score, critique, question, quote}}}}, 
                 "top_improvements": [str, str, str]
             }}
             
-            Text: {text_content[:15000]}
+            Text: {text_content[:20000]}
             """
             
             max_retries = 3
