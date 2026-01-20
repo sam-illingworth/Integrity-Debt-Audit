@@ -51,7 +51,7 @@ class IntegrityPDF(FPDF):
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, "Executive Summary", 0, 1)
         self.set_font('helvetica', '', 10)
-        self.multi_cell(0, 8, f"Document Context: {self.safe_text(doc_context)}")
+        self.multi_cell(0, 8, f"Identified Assessment: {self.safe_text(doc_context)}")
         self.cell(0, 8, f"Total Integrity Score: {score}/50", 0, 1)
         self.cell(0, 8, f"Actual Susceptibility: {actual}", 0, 1)
         self.ln(2)
@@ -173,25 +173,25 @@ else:
 # 5. Execution
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Identifying credit-bearing assessments..."):
+        with st.spinner("Scanning for substantive assessment tasks..."):
             prompt = f"""
             You are Professor Sam Illingworth. Perform a two-step analysis on the provided text.
             
             STEP 1: TRIAGE AND SELECTION
-            Scan the entire text to find specific assessment briefs (tasks, rubrics, or learning outcomes). 
-            - If no assessments are found, return ONLY a JSON object with: {{"status": "error", "message": "No specific assessment brief identified. Please upload an individual assignment brief rather than a general handbook."}}
-            - If multiple assessments are present, you must identify and select the assessment with the highest credit-bearing element or weighting. 
+            Scan the entire text to identify any specific assessment tasks (e.g., portfolios, essays, examinations). 
+            - If no assessment tasks are identified, return ONLY a JSON object with: {{"status": "error", "message": "No substantive assessment brief identified in the text. Please ensure the document includes task descriptions or requirements."}}
+            - If multiple tasks are present, select the most substantive assessment (e.g., based on word count, percentage weighting, or primary exam status). 
             
             STEP 2: AUDIT (ONLY if Step 1 is successful)
-            Analyse the selected credit-bearing task using the 10 categories of Integrity Debt. 
-            RULES: Ground exclusively in text; state "No evidence" if absent; lock temperature at 0.0; ignore file metadata.
+            Analyse the selected task using the 10 categories of Integrity Debt. 
+            RULES: Ground exclusively in text; state "No evidence found" if information is absent; lock temperature at 0.0; ignore file metadata.
             
             Return ONLY a valid JSON object.
             
             JSON Structure: 
             {{
                 "status": "success",
-                "doc_context": "Identification of the credit-bearing assessment selected for audit",
+                "doc_context": "The title or description of the specific task identified for audit",
                 "audit_results": {{cat: {{score, critique, question, quote}}}}, 
                 "top_improvements": [str, str, str]
             }}
@@ -259,7 +259,7 @@ if text_content and email_user:
                         st.warning("Structural formatting error. Retrying...")
                         time.sleep(2)
                     else:
-                        st.error("The system failed to generate a valid data structure. Please simplify the input text.")
+                        st.error("The system failed to generate a valid data structure.")
                 except Exception as e:
                     st.error(f"Audit failed: {e}")
                     break
