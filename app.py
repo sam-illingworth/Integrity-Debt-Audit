@@ -112,6 +112,18 @@ def clean_json_string(raw_string):
         return raw_string.strip()
     except: return raw_string.strip()
 
+# Persistent Model Discovery to save Quota
+@st.cache_resource
+def get_target_model(api_key):
+    genai.configure(api_key=api_key)
+    try:
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        for m in models:
+            if '1.5-flash' in m: return m
+        return models[0]
+    except:
+        return 'gemini-1.5-flash'
+
 # 4. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory and are never stored. No database of assessments is created.")
@@ -171,13 +183,9 @@ else:
 # 5. Execution
 if text_content and email_user and api_key:
     if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Synchronising with synthetic endpoints..."):
+        with st.spinner("Executing structural audit..."):
             try:
-                genai.configure(api_key=api_key)
-                # Dynamic model resolution inside button to resolve 404
-                available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                target_model = next((m for m in available_models if 'flash' in m), available_models[0])
-                
+                target_model = get_target_model(api_key)
                 model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
                 
                 prompt = f"""
@@ -194,7 +202,7 @@ if text_content and email_user and api_key:
                 Return ONLY a valid JSON object.
                 
                 Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
-                Text: {text_content[:8000]}
+                Text: {text_content[:6000]}
                 """
                 
                 response = model.generate_content(prompt)
