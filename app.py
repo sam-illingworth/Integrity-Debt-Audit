@@ -108,29 +108,17 @@ st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs ar
 st.markdown("""
 ### How to run this diagnostic
 To begin the audit, you must first complete the **Setup** section below.
-1. Provide your **API Key**; this is required for the system to function.
-2. Provide your **Email Address** for the final report.
-3. Select your **Predicted Susceptibility**; how vulnerable you believe the assessment is to AI.
-4. Once these are set, upload your file or paste your content to generate the report.
+1. Provide your **Email Address** for the final report.
+2. Select your **Predicted Susceptibility** (how vulnerable you believe the assessment is to AI).
+3. Once these are set, upload your file or paste your content to generate the report.
 """)
 
 st.divider()
 
-# Setup and Authentication at the top
-st.subheader("1. Setup and Authentication")
-auth_col, setup_col1, setup_col2 = st.columns([1.5, 1, 1])
-
-with auth_col:
-    api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key:", type="password", key="sec_k")
-    if api_key:
-        genai.configure(api_key=api_key)
-    else:
-        st.warning("Please enter a valid API Key to proceed.")
-        st.stop()
-
+st.subheader("1. Setup")
+setup_col1, setup_col2 = st.columns(2)
 with setup_col1:
     email_user = st.text_input("Your Email (required for report):", key="em_k")
-
 with setup_col2:
     expectation = st.selectbox("Predicted Susceptibility (required):", ["Low", "Medium", "High"], key="exp_k")
 
@@ -145,6 +133,12 @@ with col2:
 
 st.divider()
 
+with st.sidebar:
+    st.header("Authentication")
+    api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Gemini API Key", type="password", key="sec_k")
+    if api_key: genai.configure(api_key=api_key)
+    else: st.stop()
+
 st.subheader("2. Assessment Input")
 input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"], key="in_type")
 text_content = ""
@@ -157,7 +151,7 @@ else:
         with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
     else: text_content = raw_input
 
-# 5. Execution with Rate Limit and Model 404 Handling
+# 5. Execution with Rate Limit Handling
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
         with st.spinner("Identifying structural vulnerabilities..."):
@@ -174,9 +168,7 @@ if text_content and email_user:
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    # Corrected model string to avoid 404
-                    model = genai.GenerativeModel('gemini-1.5-flash')
-                        
+                    model = genai.GenerativeModel('gemini-1.5-flash-latest')
                     response = model.generate_content(prompt)
                     raw_results = json.loads(response.text.replace('```json', '').replace('```', '').strip())
                     
@@ -223,4 +215,4 @@ if text_content and email_user:
                     break
 else:
     if not email_user:
-        st.info("Please enter your email address and select susceptibility in the **Setup** section to proceed.")
+        st.info("Please enter your email address in the **Setup** section to proceed.")
