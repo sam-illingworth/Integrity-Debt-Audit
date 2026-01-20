@@ -5,6 +5,8 @@ from pypdf import PdfReader
 from docx import Document
 from fpdf import FPDF
 import io
+import requests
+from bs4 import BeautifulSoup
 
 # 1. Configuration and Mobile CSS
 st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", layout="wide")
@@ -107,6 +109,15 @@ def extract_text(uploaded_file):
         st.error(f"Extraction error: {e}")
     return text
 
+def scrape_url(url):
+    try:
+        response = requests.get(url, timeout=10)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])
+        return "\n".join([t.get_text() for t in tags])
+    except Exception as e:
+        return f"Error retrieving web content: {str(e)}"
+
 # 4. Privacy and Introduction
 st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory and are never stored. No database of assessments is created.")
@@ -150,7 +161,7 @@ with st.sidebar:
     email_user = st.text_input("Your Email (for report):", key="em_k")
 
 # 6. Input Modality
-input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text/URL Content"], key="in_type")
+input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"], key="in_type")
 text_content = ""
 
 if input_type == "File Upload":
@@ -158,7 +169,12 @@ if input_type == "File Upload":
     if uploaded_file:
         text_content = extract_text(uploaded_file)
 else:
-    text_content = st.text_area("Paste Assessment Content Here:", height=300, key="txt_area")
+    raw_input = st.text_area("Paste Assessment Content or Public URL Here:", height=300, key="txt_area")
+    if raw_input.startswith("http"):
+        with st.spinner("Fetching content from URL..."):
+            text_content = scrape_url(raw_input)
+    else:
+        text_content = raw_input
 
 # 7. Execution
 if text_content and email_user:
@@ -224,8 +240,6 @@ if text_content and email_user:
                 pdf.multi_cell(0, 7, "The Integrity Debt framework identifies vulnerabilities, but effective redesign requires institutional expertise. Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
                 pdf.ln(10)
                 pdf.set_font('helvetica', 'B', 11)
-                pdf.cell(0, 10, "Next Steps", 0, 1)
-                pdf.set_font('helvetica', '', 11)
                 pdf.cell(0, 8, "Access the Strategy Guide: https://samillingworth.gumroad.com/l/integrity-debt-audit", 0, 1)
                 pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
                 
