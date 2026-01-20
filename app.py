@@ -202,8 +202,8 @@ if text_content and email_user:
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    # Hardcoded model name to save API quota
-                    model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
+                    # Identifier corrected to gemini-1.5-flash-latest for v1beta compatibility
+                    model = genai.GenerativeModel('gemini-1.5-flash-latest', generation_config={"temperature": 0.0})
                     
                     response = model.generate_content(prompt)
                     json_payload = clean_json_string(response.text)
