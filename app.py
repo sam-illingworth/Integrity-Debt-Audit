@@ -175,15 +175,15 @@ if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
         with st.spinner("Analysing assessment integrity..."):
             prompt = f"""
-            You are Professor Sam Illingworth. Perform a combined triage and audit.
+            You are Professor Sam Illingworth. Perform a combined triage and audit on the provided text.
             
             STEP 1: IDENTIFICATION
-            Scan text for substantive assessment instructions (Portfolio, Exam, Essay). 
-            Identify the task with highest credit weighting or word count. 
-            If none exist, return a JSON error.
+            Scan the text to identify substantive assessment instructions (e.g., Portfolio, Examination, Essay). 
+            - Identify the assessment with the highest credit weighting or most substantive description. 
+            - If no assessment is found, return a JSON error.
             
             STEP 2: AUDIT
-            Analyse that task using the 10 categories of Integrity Debt. 
+            Analyse that specific task using the 10 categories of Integrity Debt. 
             RULES: Ground exclusively in text; state "No evidence found" if absent; lock temperature at 0.0; ignore file metadata.
             
             Return ONLY a valid JSON object.
@@ -191,20 +191,19 @@ if text_content and email_user:
             JSON Structure: 
             {{
                 "status": "success",
-                "doc_context": "Title/description of task audited",
+                "doc_context": "Identification of the specific task audited",
                 "audit_results": {{cat: {{score, critique, question, quote}}}}, 
                 "top_improvements": [str, str, str]
             }}
             
-            Text: {text_content[:10000]}
+            Text: {text_content[:20000]}
             """
             
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                    model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
-                    model = genai.GenerativeModel(model_name, generation_config={"temperature": 0.0})
+                    # Hardcoded model name to save API quota
+                    model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
                     
                     response = model.generate_content(prompt)
                     json_payload = clean_json_string(response.text)
