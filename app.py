@@ -107,6 +107,15 @@ def scrape_url(url):
         return content
     except Exception as e: return f"Error retrieving web content: {str(e)}"
 
+@st.cache_data
+def get_valid_model(api_key):
+    genai.configure(api_key=api_key)
+    try:
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        return 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
+    except:
+        return 'gemini-1.5-flash'
+
 def clean_json_string(raw_string):
     try:
         match = re.search(r'\{.*\}', raw_string, re.DOTALL)
@@ -173,10 +182,12 @@ else:
         with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
     else: text_content = raw_input
 
-# 5. Core Audit Execution (Cached and Resilient)
+# 5. Core Audit Execution (Cached)
 @st.cache_data(show_spinner=False)
 def get_audit_result(api_key, text):
     genai.configure(api_key=api_key)
+    target_model = get_valid_model(api_key)
+    model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
     
     prompt = f"""
     You are Professor Sam Illingworth. Perform a combined triage and audit on the provided text.
@@ -196,24 +207,8 @@ def get_audit_result(api_key, text):
     Text: {text[:8000]}
     """
     
-    # Resilient model sequence to avoid 404 while saving quota
-    model_options = ['gemini-1.5-flash-latest', 'gemini-1.5-flash', 'gemini-pro']
-    last_error = None
-    
-    for m_name in model_options:
-        try:
-            model = genai.GenerativeModel(m_name, generation_config={"temperature": 0.0})
-            response = model.generate_content(prompt)
-            return response.text
-        except exceptions.NotFound:
-            continue
-        except exceptions.ResourceExhausted:
-            raise exceptions.ResourceExhausted("Quota reached.")
-        except Exception as e:
-            last_error = e
-            continue
-            
-    raise last_error or Exception("All model endpoints failed.")
+    response = model.generate_content(prompt)
+    return response.text
 
 # 6. UI Logic
 if text_content and email_user:
