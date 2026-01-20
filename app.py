@@ -146,7 +146,7 @@ with col1:
     2. **Dialogue**: Utilise the dialogue questions within staff meetings or student representative forums.
     3. **Redesign**: Focus intervention on categories marked in **Red** (Vulnerable).
     """)
-    st.markdown("[More details here](https://samillingworth.gumroad.com/l/integrity-debt-audit) (Open Access Resource)")
+    st.markdown("[More details here](https://samillingworth.substack.com/) (Open Access Resource)")
 with col2:
     st.info("**The Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
 
@@ -181,7 +181,7 @@ if text_content and email_user:
             Scan the entire text to identify substantive assessment instructions. Look for keywords like "Portfolio", "Examination", "Essay Requirements", "Portfolio Assessment", "Release of paper", or "Portfolio details". 
             - Even if the document is a general handbook, locate the section describing how a specific module or paper is assessed.
             - If no assessment tasks are identified, return ONLY a JSON object with: {{"status": "error", "message": "No substantive assessment brief identified in the text. Please ensure the document includes task descriptions or requirements."}}
-            - If multiple tasks are present, select the most substantive one (prioritize portfolios or terminal essays). 
+            - If multiple tasks are present, select the most substantive one (prioritise portfolios or terminal essays). 
             
             STEP 2: AUDIT (ONLY if Step 1 is successful)
             Analyse the selected task using the 10 categories of Integrity Debt. 
@@ -205,9 +205,13 @@ if text_content and email_user:
                 try:
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
+                    
                     model = genai.GenerativeModel(model_name, generation_config={"temperature": 0.0})
                     
                     response = model.generate_content(prompt)
+                    if not response.text:
+                        raise ValueError("Empty response from system.")
+                        
                     json_payload = clean_json_string(response.text)
                     raw_results = json.loads(json_payload)
                     
@@ -242,8 +246,8 @@ if text_content and email_user:
                         pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                     
                     pdf.add_page(); pdf.set_font('helvetica', 'B', 14); pdf.cell(0, 10, "Curriculum Redesign and Consultancy", 0, 1)
-                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
-                    pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.gumroad.com/l/integrity-debt-audit", 0, 1)
+                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
+                    pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.substack.com/", 0, 1)
                     pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
                     
                     st.download_button("Download Full PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf", mime="application/pdf", key="dl_k")
