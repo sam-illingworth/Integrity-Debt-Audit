@@ -173,26 +173,25 @@ else:
 # 5. Execution
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Scanning for substantive assessment tasks..."):
+        with st.spinner("Analysing assessment integrity..."):
             prompt = f"""
-            You are Professor Sam Illingworth. Perform a two-step analysis on the provided text.
+            You are Professor Sam Illingworth. Perform a combined triage and audit on the provided text.
             
-            STEP 1: TRIAGE AND SELECTION
-            Scan the entire text to identify substantive assessment instructions. Look for keywords like "Portfolio", "Examination", "Essay Requirements", "Portfolio Assessment", "Release of paper", or "Portfolio details". 
-            - Even if the document is a general handbook, locate the section describing how a specific module or paper is assessed.
-            - If no assessment tasks are identified, return ONLY a JSON object with: {{"status": "error", "message": "No substantive assessment brief identified in the text. Please ensure the document includes task descriptions or requirements."}}
-            - If multiple tasks are present, select the most substantive one (prioritise portfolios or terminal essays). 
+            STEP 1: IDENTIFICATION
+            Scan the text to identify substantive assessment instructions (e.g., Portfolio, Examination, Essay). 
+            - Identify the assessment with the highest credit weighting or most substantive description. 
+            - If no assessment is found, return a JSON error.
             
-            STEP 2: AUDIT (ONLY if Step 1 is successful)
-            Analyse the selected task using the 10 categories of Integrity Debt. 
-            RULES: Ground exclusively in text; state "No evidence found" if information is absent; lock temperature at 0.0; ignore file metadata.
+            STEP 2: AUDIT
+            Analyse that specific task using the 10 categories of Integrity Debt. 
+            RULES: Ground exclusively in text; state "No evidence found" if absent; lock temperature at 0.0; ignore file metadata.
             
             Return ONLY a valid JSON object.
             
             JSON Structure: 
             {{
                 "status": "success",
-                "doc_context": "The title or specific portfolio/task identified for audit",
+                "doc_context": "Identification of the specific task audited",
                 "audit_results": {{cat: {{score, critique, question, quote}}}}, 
                 "top_improvements": [str, str, str]
             }}
@@ -205,13 +204,9 @@ if text_content and email_user:
                 try:
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
-                    
                     model = genai.GenerativeModel(model_name, generation_config={"temperature": 0.0})
                     
                     response = model.generate_content(prompt)
-                    if not response.text:
-                        raise ValueError("Empty response from system.")
-                        
                     json_payload = clean_json_string(response.text)
                     raw_results = json.loads(json_payload)
                     
@@ -246,7 +241,7 @@ if text_content and email_user:
                         pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                     
                     pdf.add_page(); pdf.set_font('helvetica', 'B', 14); pdf.cell(0, 10, "Curriculum Redesign and Consultancy", 0, 1)
-                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
+                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
                     pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.substack.com/", 0, 1)
                     pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
                     
@@ -255,10 +250,10 @@ if text_content and email_user:
 
                 except exceptions.ResourceExhausted:
                     if i < max_retries - 1:
-                        st.warning("Rate limit reached. Retrying...")
-                        time.sleep(30)
+                        st.warning("API quota reached. Please wait 60 seconds.")
+                        time.sleep(60)
                     else:
-                        st.error("API Quota exceeded. Please try again in one minute.")
+                        st.error("API Quota exceeded. Please try again later.")
                 except json.JSONDecodeError:
                     if i < max_retries - 1:
                         st.warning("Structural formatting error. Retrying...")
