@@ -103,8 +103,6 @@ def scrape_url(url):
     except Exception as e: return f"Error retrieving web content: {str(e)}"
 
 def clean_json_string(raw_string):
-    """Sanitize string to prevent delimiter and quote errors during JSON parsing."""
-    # Remove markdown code blocks if present
     cleaned = re.sub(r'```json\s*|\s*```', '', raw_string).strip()
     return cleaned
 
@@ -166,32 +164,36 @@ else:
         with st.spinner("Fetching content..."): text_content = scrape_url(raw_input)
     else: text_content = raw_input
 
-# 5. Execution with Robust Error Handling
+# 5. Execution
 if text_content and email_user:
     if st.button("Generate Diagnostic Report", key="run_k"):
         with st.spinner("Identifying structural vulnerabilities..."):
             prompt = f"""
-            You are Professor Sam Illingworth. Analyse this brief using the 10 categories of Integrity Debt.
-            RULES: 
-            1. Parse Learning Outcomes and Task Descriptions. 
-            2. CATEGORY RECENCY: Ignore file dates; focus on whether the task requires live/current data engagement.
-            3. Ensure all double quotes within strings are escaped using a backslash to prevent JSON parsing failures.
-            4. Return ONLY a valid JSON object.
+            You are Professor Sam Illingworth. Analyse the provided assessment brief using the 10 categories of Integrity Debt.
+            
+            STRICT ADHERENCE RULES:
+            1. Ground your analysis exclusively in the provided text. Do not infer institutional policies, local contexts, or student characteristics that are not explicitly stated.
+            2. Distinguish clearly between what is known from the text, what is unclear, and what is inferred. 
+            3. If a category (e.g., Collaborative, Reflection, or Defence) is not addressed in the text, you must state that the information is absent. Do not invent details.
+            4. CATEGORY RECENCY: Ignore document metadata. Assess only if the task requires students to respond to live data or events occurring after the brief was issued.
+            
+            OUTPUT RULES:
+            - Return ONLY a valid JSON object.
+            - Provide a direct quote from the text as evidence for every category. 
+            - Escape all double quotes within the JSON strings.
             
             JSON Structure: {{"audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
-            Text: {text_content[:15000]}
+            Brief Text: {text_content[:15000]}
             """
             
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    # Resolve model selection dynamically to prevent 404 errors
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
                     model = genai.GenerativeModel(model_name)
                     
                     response = model.generate_content(prompt)
-                    # Use the new cleaning utility before parsing
                     json_payload = clean_json_string(response.text)
                     raw_results = json.loads(json_payload)
                     
@@ -220,7 +222,7 @@ if text_content and email_user:
                         pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
                     
                     pdf.add_page(); pdf.set_font('helvetica', 'B', 14); pdf.cell(0, 10, "Curriculum Redesign and Consultancy", 0, 1)
-                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to move from diagnostic debt to resilient practice.")
+                    pdf.set_font('helvetica', '', 11); pdf.multi_cell(0, 7, "Professor Sam Illingworth provides bespoke workshops and strategic support to help professionals move from diagnostic debt to resilient practice.")
                     pdf.ln(10); pdf.cell(0, 8, "Strategy Guide: https://samillingworth.gumroad.com/l/integrity-debt-audit", 0, 1)
                     pdf.cell(0, 8, "Contact for Consultancy: sam.illingworth@gmail.com", 0, 1)
                     
@@ -234,7 +236,7 @@ if text_content and email_user:
                     else:
                         st.error("API Quota exceeded. Please try again in one minute.")
                 except json.JSONDecodeError as je:
-                    st.error(f"Structural formatting error in synthetic response. Retrying... ({je})")
+                    st.error(f"Structural formatting error in response. Retrying... ({je})")
                     time.sleep(2)
                 except Exception as e:
                     st.error(f"Audit failed: {e}")
