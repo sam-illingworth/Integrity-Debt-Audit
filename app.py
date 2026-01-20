@@ -6,7 +6,7 @@ from docx import Document
 from fpdf import FPDF
 import io
 import requests
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import time
 from google.api_core import exceptions
 
@@ -176,7 +176,7 @@ if text_content and email_user:
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    # Resolve 404 by dynamic model selection
+                    # Resolve errors by dynamic model selection
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     model_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available_models else available_models[0]
                     model = genai.GenerativeModel(model_name)
