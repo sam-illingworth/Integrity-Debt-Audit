@@ -112,6 +112,17 @@ def clean_json_string(raw_string):
         return raw_string.strip()
     except: return raw_string.strip()
 
+# Model Resource Cache to Save Quota
+@st.cache_resource
+def get_audit_model(api_key):
+    genai.configure(api_key=api_key)
+    try:
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        target_name = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
+        return genai.GenerativeModel(target_name, generation_config={"temperature": 0.0})
+    except:
+        return genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
+
 # 4. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory and are never stored. No database of assessments is created.")
@@ -171,15 +182,10 @@ else:
 # 5. Execution
 if text_content and email_user and api_key:
     if st.button("Generate Diagnostic Report", key="run_k"):
-        with st.spinner("Synchronising with synthetic endpoints..."):
+        with st.spinner("Initiating structural enquiry..."):
             try:
-                genai.configure(api_key=api_key)
-                # DYNAMIC MODEL DISCOVERY: 
-                # Fetches exactly what your API key is allowed to use.
-                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                target_model = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
-                
-                model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
+                # Use cached model object to prevent quota leaks
+                model = get_audit_model(api_key)
                 
                 prompt = f"""
                 You are Professor Sam Illingworth. Perform a combined triage and audit.
@@ -190,12 +196,12 @@ if text_content and email_user and api_key:
                 
                 STEP 2: AUDIT
                 Analyse that task using the 10 categories of Integrity Debt. 
-                RULES: Ground in text; state "No evidence found" if absent; lock temperature 0.0; ignore metadata.
+                RULES: Ground results in text; state "No evidence found" if absent; lock temperature 0.0; ignore metadata.
                 
                 Return ONLY a valid JSON object.
                 
                 Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
-                Text: {text_content[:8000]}
+                Text: {text_content[:7000]}
                 """
                 
                 response = model.generate_content(prompt)
@@ -239,7 +245,7 @@ if text_content and email_user and api_key:
                     st.download_button("Download Full PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf", mime="application/pdf", key="dl_k")
 
             except exceptions.ResourceExhausted:
-                st.error("API Quota exceeded. Please wait 60 seconds for the limit to reset.")
+                st.error("API Quota exceeded. Please wait sixty seconds for the limit to reset.")
             except Exception as e:
                 st.error(f"Audit failed: {e}")
 elif not api_key:
