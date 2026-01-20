@@ -126,7 +126,15 @@ st.divider()
 
 col1, col2 = st.columns([2, 1])
 with col1:
-    st.markdown("### Pre-Audit Checklist\nFor an accurate diagnostic, your input should include the task description, learning outcomes, and submission formats.")
+    st.markdown("""
+    ### Pre-Audit Checklist
+    For an accurate diagnostic, your input should include the task description, learning outcomes, and submission formats.
+    
+    ### How to Use These Results
+    1. **Reflect**: Critically analyse the system generated critiques. Are they fair?
+    2. **Dialogue**: Utilise the dialogue questions with staff meetings or student representative forums.
+    3. **Redesign**: Focus intervention on categories marked in **Red** (Vulnerable).
+    """)
     st.markdown("[More details here](https://samillingworth.gumroad.com/l/integrity-debt-audit) (Open Access Resource)")
 with col2:
     st.info("**The Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
@@ -168,7 +176,8 @@ if text_content and email_user:
             max_retries = 3
             for i in range(max_retries):
                 try:
-                    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                    # Updated to use the base model identifier to avoid 404 errors
+                    model = genai.GenerativeModel('gemini-1.5-flash')
                     response = model.generate_content(prompt)
                     raw_results = json.loads(response.text.replace('```json', '').replace('```', '').strip())
                     
