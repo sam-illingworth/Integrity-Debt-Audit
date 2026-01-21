@@ -105,8 +105,11 @@ def scrape_url(url):
     except Exception as e: return f"Error: {str(e)}"
 
 def clean_json_string(raw_string):
-    match = re.search(r'\{.*\}', raw_string, re.DOTALL)
-    return match.group(0) if match else raw_string.strip()
+    # Remove markdown code blocks if present
+    cleaned = re.sub(r'```json\s*|\s*```', '', raw_string)
+    # Target only the outermost curly braces
+    match = re.search(r'\{.*\}', cleaned, re.DOTALL)
+    return match.group(0) if match else cleaned.strip()
 
 @st.cache_resource
 def discover_model(api_key):
@@ -193,13 +196,16 @@ if submit_button:
                     
                     STEP 1: IDENTIFICATION
                     Scan text for assessment tasks. Look past module metadata. 
-                    Identify the specific entity with the highest credit weighting (e.g., "Architectural Portfolio", "Essay").
-                    In module descriptors, the primary task is found under headings like "Assessment Description" or "Weighting %".
+                    Identify the entity with the highest credit weighting (e.g., "Architectural Portfolio").
                     If no specific task is found, return JSON status: "error".
                     
                     STEP 2: AUDIT
-                    Analyse that identified task using the 10 categories of Integrity Debt. 
-                    RULES: Ground exclusively in text; state "No evidence found" if absent; lock temperature 0.0.
+                    Analyse that task using the 10 categories of Integrity Debt. 
+                    RULES: 
+                    - Ground exclusively in text.
+                    - State "No evidence found" if absent.
+                    - Lock temperature 0.0.
+                    - Ensure ALL text values in JSON are escaped and contain no unescaped quotes.
                     
                     Return ONLY a valid JSON object.
                     Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
@@ -207,7 +213,13 @@ if submit_button:
                     """
                     
                     response = model.generate_content(prompt)
-                    results_json = json.loads(clean_json_string(response.text))
+                    try:
+                        results_json = json.loads(clean_json_string(response.text))
+                    except json.JSONDecodeError as je:
+                        # Attempt secondary repair of the string if standard parsing fails
+                        st.warning("Diagnostic output required repair. Analysis continuing.")
+                        repaired = response.text.replace('\n', ' ').replace('\\', '\\\\')
+                        results_json = json.loads(clean_json_string(repaired))
                     
                     if results_json.get("status") == "error":
                         st.error("No substantive assessment task could be identified in the provided text.")
