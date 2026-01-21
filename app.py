@@ -23,64 +23,169 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. PDF Report Generator Class
+# 2. Professional PDF Report Generator Class
 class IntegrityPDF(FPDF):
     def __init__(self):
         super().__init__()
-        self.set_margins(15, 15, 15)
-        self.set_auto_page_break(auto=True, margin=15)
+        self.set_margins(15, 20, 15)
+        self.set_auto_page_break(auto=True, margin=20)
+        # Professional Color Palette
+        self.primary_color = (44, 62, 80)    # Dark Slate Blue for headers
+        self.text_color = (50, 50, 50)       # Standard dark grey text
+        self.accent_blue = (52, 152, 219)    # Bright blue accent
+        self.success = (39, 174, 96)         # Resilient Green
+        self.warning = (243, 156, 18)        # Moderate Orange/Yellow
+        self.danger = (231, 76, 60)          # Vulnerable Red
+        self.light_grey = (245, 247, 250)    # Background fills
 
     def header(self):
-        self.set_font('helvetica', 'B', 16)
-        self.cell(0, 10, 'Integrity Debt Audit Report', 0, 1, 'C')
-        self.set_font('helvetica', 'I', 10)
-        self.cell(0, 10, 'Framework by Professor Sam Illingworth (2026)', 0, 1, 'C')
-        self.ln(10)
+        # Colored Banner Header
+        self.set_fill_color(*self.primary_color)
+        self.rect(0, 0, 210, 35, 'F')
+        self.set_y(10)
+        self.set_font('helvetica', 'B', 18)
+        self.set_text_color(255, 255, 255)
+        self.cell(0, 10, 'Integrity Debt Audit Report', 0, 1, 'L')
+        self.set_font('helvetica', 'I', 11)
+        self.cell(0, 8, 'Framework by Professor Sam Illingworth', 0, 1, 'L')
+        self.ln(20)
 
     def footer(self):
-        self.set_y(-15)
+        self.set_y(-18)
+        self.set_draw_color(200, 200, 200)
+        self.line(15, self.get_y(), 195, self.get_y())
         self.set_font('helvetica', 'I', 8)
-        self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', 0, 0, 'C')
+        self.set_text_color(128, 128, 128)
+        self.cell(0, 10, f'Slow AI Diagnostic Tool | Private & Confidential | Page {self.page_no()}/{{nb}}', 0, 0, 'C')
 
     def safe_text(self, text):
         if not text: return "N/A"
-        mapping = {150: ',', 151: ',', 8211: ',', 8212: ',', 8216: "'", 8217: "'", 8220: '"', 8221: '"', 8230: '...'}
-        return str(text).translate(mapping).encode('latin-1', 'ignore').decode('latin-1')
+        # Ensure text is string and handle common non-latin-1 chars
+        text_str = str(text)
+        replacements = {
+            '\u2013': '-', '\u2014': '-', '\u2018': "'", '\u2019': "'", 
+            '\u201c': '"', '\u201d': '"', '\u2026': '...', '\u2022': '*'
+        }
+        for char, replacement in replacements.items():
+            text_str = text_str.replace(char, replacement)
+            
+        return text_str.encode('latin-1', 'replace').decode('latin-1')
 
     def add_summary(self, actual, score, improvements, doc_context):
-        self.set_font('helvetica', 'B', 12)
+        self.set_font('helvetica', 'B', 16)
+        self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Executive Summary", 0, 1)
-        self.set_font('helvetica', '', 10)
-        self.multi_cell(0, 8, f"Identified Assessment: {self.safe_text(doc_context)}")
-        self.cell(0, 8, f"Total Integrity Score: {score}/50", 0, 1)
-        self.cell(0, 8, f"Actual Susceptibility: {actual}", 0, 1)
         self.ln(2)
-        self.set_font('helvetica', 'B', 10)
-        self.cell(0, 8, "Top 3 Priority Improvements:", 0, 1)
-        self.set_font('helvetica', '', 10)
-        for imp in improvements:
-            self.multi_cell(0, 6, f"* {self.safe_text(imp)}")
-            self.ln(2)
+
+        # Structured Metrics Box to prevent layout overlap glitches
+        self.set_fill_color(*self.light_grey)
+        self.set_draw_color(220, 220, 220)
+        box_start_y = self.get_y()
+        self.rect(15, box_start_y, 180, 40, 'FD')
+        
+        self.set_xy(20, box_start_y + 5)
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(45, 8, "Assessed Context:", 0, 0)
+        self.set_font('helvetica', '', 11)
+        self.set_text_color(*self.text_color)
+        # Use multi_cell within restricted width to prevent overrun
+        self.multi_cell(125, 8, self.safe_text(doc_context))
+
+        # Scores Row using explicit positioning
+        current_y = self.get_y() + 2
+        self.set_xy(20, current_y)
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(45, 8, "Total Integrity Score:", 0, 0)
+        
+        # Determine Score Color
+        score_color = self.success if score >= 40 else self.warning if score >= 25 else self.danger
+        self.set_font('helvetica', 'B', 14)
+        self.set_text_color(*score_color)
+        self.cell(30, 8, f"{score}/50", 0, 0)
+        
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(35, 8, "Susceptibility:", 0, 0)
+        self.set_font('helvetica', 'B', 12)
+        self.set_text_color(*score_color)
+        self.cell(40, 8, actual, 0, 1)
+        
+        self.set_y(box_start_y + 45)
         self.ln(5)
 
-    def add_category(self, name, score, critique, question, quote):
-        if score == 5: self.set_fill_color(200, 255, 200) 
-        elif score >= 3: self.set_fill_color(255, 255, 200) 
-        else: self.set_fill_color(255, 200, 200) 
-        self.set_font('helvetica', 'B', 12)
-        self.cell(0, 10, f" {self.safe_text(name)} (Score: {score}/5)", 1, 1, 'L', 1)
-        self.ln(2)
-        self.set_font('helvetica', '', 10)
-        self.multi_cell(0, 6, f"Critique: {self.safe_text(critique)}")
-        self.ln(1)
-        self.set_font('helvetica', 'I', 10)
-        self.multi_cell(0, 6, f"Dialogue Question: {self.safe_text(question)}")
-        self.ln(2)
-        self.set_font('helvetica', '', 8)
-        self.set_text_color(100, 100, 100)
-        self.multi_cell(0, 5, f"Evidence: \"{self.safe_text(quote)}\"")
-        self.set_text_color(0, 0, 0)
+        # Priorities Section
+        self.set_font('helvetica', 'B', 14)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
+        self.set_font('helvetica', '', 11)
+        for i, imp in enumerate(improvements, 1):
+            self.set_text_color(*self.accent_blue)
+            self.cell(10, 8, f"{i}.", 0, 0)
+            self.set_text_color(*self.text_color)
+            self.multi_cell(0, 8, self.safe_text(imp))
+            self.ln(1)
         self.ln(5)
+        self.set_draw_color(220,220,220)
+        self.line(15, self.get_y(), 195, self.get_y()) # Separator line
+        self.ln(10)
+
+    def add_category(self, name, score, critique, question, quote):
+        # Determine status color and label based on score
+        if score == 5:
+            accent = self.success
+            status = "RESILIENT"
+        elif score >= 3:
+            accent = self.warning
+            status = "MODERATE"
+        else:
+            accent = self.danger
+            status = "VULNERABLE"
+
+        # Visual Anchor: Colored side strip
+        start_y = self.get_y()
+        self.set_fill_color(*accent)
+        self.rect(15, start_y+2, 2, 8, 'F')
+
+        # Category Header
+        self.set_xy(18, start_y)
+        self.set_font('helvetica', 'B', 12)
+        self.set_text_color(*self.primary_color)
+        self.cell(130, 12, f" {self.safe_text(name)}", 0, 0, 'L')
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*accent)
+        self.cell(0, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
+        self.ln(2)
+
+        # Content
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, "Critique:", 0, 1)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color)
+        self.multi_cell(0, 6, self.safe_text(critique))
+        self.ln(3)
+
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, "Dialogue Question:", 0, 1)
+        self.set_font('helvetica', 'I', 10)
+        self.set_text_color(*self.text_color)
+        self.multi_cell(0, 6, self.safe_text(question))
+        self.ln(3)
+
+        # Styled Quote Block
+        self.set_font('helvetica', 'B', 9)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, "Evidence Reference:", 0, 1)
+        self.set_font('courier', '', 9) # Technical font for data evidence
+        self.set_text_color(80, 80, 80)
+        self.set_fill_color(250, 250, 250)
+        self.set_draw_color(230, 230, 230)
+        # Use multi_cell with border (1) and fill (True)
+        self.multi_cell(0, 5, f"\"{self.safe_text(quote)}\"", 1, 'L', True)
+        self.ln(8)
 
 # 3. Utilities
 def extract_text(uploaded_file):
@@ -240,6 +345,7 @@ if submit_button:
                             st.write(f"**Critique:** {data.get('critique', 'N/A')}")
 
                         pdf = IntegrityPDF()
+                        pdf.alias_nb_pages()
                         pdf.add_page()
                         pdf.add_summary(actual_cat, total_score, top_imps, doc_context)
                         for cat, data in results.items():
