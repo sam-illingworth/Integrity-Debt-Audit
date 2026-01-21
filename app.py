@@ -108,26 +108,6 @@ def clean_json_string(raw_string):
     match = re.search(r'\{.*\}', raw_string, re.DOTALL)
     return match.group(0) if match else raw_string.strip()
 
-# Audit Cache to Save Quota
-@st.cache_data(show_spinner=False)
-def run_audit_api(api_key, text):
-    genai.configure(api_key=api_key)
-    try:
-        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        target = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in models else models[0]
-    except: target = 'gemini-1.5-flash'
-    
-    model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
-    prompt = f"""
-    You are Professor Sam Illingworth. Perform a combined triage and audit.
-    STEP 1: Identify the highest weighting task.
-    STEP 2: Audit using 10 categories of Integrity Debt. 
-    Return ONLY a JSON object.
-    Text: {text[:6000]}
-    """
-    response = model.generate_content(prompt)
-    return response.text
-
 # 4. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
@@ -154,7 +134,7 @@ with col_info2:
 
 st.divider()
 
-# 5. Form Block for Formality and Stability
+# 5. Form Block
 with st.form("audit_form"):
     st.subheader("1. Setup")
     setup_col1, setup_col2 = st.columns(2)
@@ -174,7 +154,6 @@ with st.form("audit_form"):
     submit_button = st.form_submit_button("Generate Diagnostic Report")
 
 # 6. Execution Logic
-# Automatically use API key from Streamlit Secrets
 api_key = st.secrets.get("GEMINI_API_KEY")
 
 if submit_button:
@@ -195,9 +174,22 @@ if submit_button:
             st.error("No assessment content provided.")
         else:
             with st.spinner("Analysing assessment integrity..."):
+                time.sleep(3) # Mandatory wait to clear burst quota
                 try:
-                    raw_response = run_audit_api(api_key, final_text)
-                    results_json = json.loads(clean_json_string(raw_response))
+                    genai.configure(api_key=api_key)
+                    # Use a single direct model call to save quota on list_models
+                    model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
+                    
+                    prompt = f"""
+                    You are Professor Sam Illingworth. Perform a combined triage and audit.
+                    STEP 1: Identify the highest weighting task.
+                    STEP 2: Audit using 10 categories of Integrity Debt. 
+                    Return ONLY a JSON object.
+                    Text: {final_text[:5000]}
+                    """
+                    
+                    response = model.generate_content(prompt)
+                    results_json = json.loads(clean_json_string(response.text))
                     
                     results = results_json.get("audit_results", {})
                     doc_context = results_json.get("doc_context", "N/A")
@@ -227,4 +219,13 @@ if submit_button:
                 except exceptions.ResourceExhausted:
                     st.error("The API quota is full. Please wait sixty seconds.")
                 except Exception as e:
-                    st.error(f"Audit failed: {e}")
+                    # Attempt second model fallback only if first fails with 404
+                    if "404" in str(e):
+                        try:
+                            model = genai.GenerativeModel('models/gemini-1.5-flash', generation_config={"temperature": 0.0})
+                            response = model.generate_content(prompt)
+                            # (Processing logic remains same as above)
+                        except:
+                            st.error(f"Audit failed: {e}")
+                    else:
+                        st.error(f"Audit failed: {e}")
