@@ -30,16 +30,15 @@ class IntegrityPDF(FPDF):
         self.set_margins(15, 20, 15)
         self.set_auto_page_break(auto=True, margin=20)
         # Professional Color Palette
-        self.primary_color = (44, 62, 80)    # Dark Slate Blue for headers
-        self.text_color = (50, 50, 50)       # Standard dark grey text
-        self.accent_blue = (52, 152, 219)    # Bright blue accent
-        self.success = (39, 174, 96)         # Resilient Green
-        self.warning = (243, 156, 18)        # Moderate Orange/Yellow
-        self.danger = (231, 76, 60)          # Vulnerable Red
-        self.light_grey = (245, 247, 250)    # Background fills
+        self.primary_color = (44, 62, 80)    
+        self.text_color_val = (50, 50, 50)       
+        self.accent_blue = (52, 152, 219)    
+        self.success = (39, 174, 96)         
+        self.warning = (243, 156, 18)        
+        self.danger = (231, 76, 60)          
+        self.light_grey = (245, 247, 250)    
 
     def header(self):
-        # Colored Banner Header
         self.set_fill_color(*self.primary_color)
         self.rect(0, 0, 210, 35, 'F')
         self.set_y(10)
@@ -60,7 +59,6 @@ class IntegrityPDF(FPDF):
 
     def safe_text(self, text):
         if not text: return "N/A"
-        # Ensure text is string and handle common non-latin-1 chars
         text_str = str(text)
         replacements = {
             '\u2013': '-', '\u2014': '-', '\u2018': "'", '\u2019': "'", 
@@ -68,7 +66,6 @@ class IntegrityPDF(FPDF):
         }
         for char, replacement in replacements.items():
             text_str = text_str.replace(char, replacement)
-            
         return text_str.encode('latin-1', 'replace').decode('latin-1')
 
     def add_summary(self, actual, score, improvements, doc_context):
@@ -77,7 +74,6 @@ class IntegrityPDF(FPDF):
         self.cell(0, 10, "Executive Summary", 0, 1)
         self.ln(2)
 
-        # Structured Metrics Box to prevent layout overlap glitches
         self.set_fill_color(*self.light_grey)
         self.set_draw_color(220, 220, 220)
         box_start_y = self.get_y()
@@ -88,18 +84,15 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(45, 8, "Assessed Context:", 0, 0)
         self.set_font('helvetica', '', 11)
-        self.set_text_color(*self.text_color)
-        # Use multi_cell within restricted width to prevent overrun
+        self.set_text_color(*self.text_color_val)
         self.multi_cell(125, 8, self.safe_text(doc_context))
 
-        # Scores Row using explicit positioning
         current_y = self.get_y() + 2
         self.set_xy(20, current_y)
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
         self.cell(45, 8, "Total Integrity Score:", 0, 0)
         
-        # Determine Score Color
         score_color = self.success if score >= 40 else self.warning if score >= 25 else self.danger
         self.set_font('helvetica', 'B', 14)
         self.set_text_color(*score_color)
@@ -115,7 +108,6 @@ class IntegrityPDF(FPDF):
         self.set_y(box_start_y + 45)
         self.ln(5)
 
-        # Priorities Section
         self.set_font('helvetica', 'B', 14)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
@@ -123,16 +115,15 @@ class IntegrityPDF(FPDF):
         for i, imp in enumerate(improvements, 1):
             self.set_text_color(*self.accent_blue)
             self.cell(10, 8, f"{i}.", 0, 0)
-            self.set_text_color(*self.text_color)
+            self.set_text_color(*self.text_color_val)
             self.multi_cell(0, 8, self.safe_text(imp))
             self.ln(1)
         self.ln(5)
         self.set_draw_color(220,220,220)
-        self.line(15, self.get_y(), 195, self.get_y()) # Separator line
+        self.line(15, self.get_y(), 195, self.get_y()) 
         self.ln(10)
 
     def add_category(self, name, score, critique, question, quote):
-        # Determine status color and label based on score
         if score == 5:
             accent = self.success
             status = "RESILIENT"
@@ -143,12 +134,10 @@ class IntegrityPDF(FPDF):
             accent = self.danger
             status = "VULNERABLE"
 
-        # Visual Anchor: Colored side strip
         start_y = self.get_y()
         self.set_fill_color(*accent)
         self.rect(15, start_y+2, 2, 8, 'F')
 
-        # Category Header
         self.set_xy(18, start_y)
         self.set_font('helvetica', 'B', 12)
         self.set_text_color(*self.primary_color)
@@ -158,12 +147,11 @@ class IntegrityPDF(FPDF):
         self.cell(0, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
         self.ln(2)
 
-        # Content
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Critique:", 0, 1)
         self.set_font('helvetica', '', 10)
-        self.set_text_color(*self.text_color)
+        self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
 
@@ -171,19 +159,17 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Dialogue Question:", 0, 1)
         self.set_font('helvetica', 'I', 10)
-        self.set_text_color(*self.text_color)
+        self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(question))
         self.ln(3)
 
-        # Styled Quote Block
         self.set_font('helvetica', 'B', 9)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Evidence Reference:", 0, 1)
-        self.set_font('courier', '', 9) # Technical font for data evidence
+        self.set_font('courier', '', 9) 
         self.set_text_color(80, 80, 80)
         self.set_fill_color(250, 250, 250)
         self.set_draw_color(230, 230, 230)
-        # Use multi_cell with border (1) and fill (True)
         self.multi_cell(0, 5, f"\"{self.safe_text(quote)}\"", 1, 'L', True)
         self.ln(8)
 
@@ -298,20 +284,16 @@ if submit_button:
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
                     
                     STEP 1: IDENTIFICATION
-                    Scan text for assessment tasks. Look past module metadata. 
-                    Identify the entity with the highest credit weighting (e.g., "Architectural Portfolio").
-                    If no specific task is identified, return JSON status: "error".
+                    Identify the assessment task with highest credit weighting (e.g., "Portfolio").
+                    If no task exists, return JSON status: "error".
                     
                     STEP 2: AUDIT
                     Analyse that task using the 10 categories of Integrity Debt. 
-                    RULES: 
-                    - Ground exclusively in text.
-                    - State "No evidence found" if absent.
+                    - Ground in text.
                     - Lock temperature 0.0.
-                    - Ensure ALL text values in JSON are properly escaped with double backslashes.
-                    - Do not use unescaped double quotes or colons inside text strings.
+                    - Ensure ALL text values are properly escaped for JSON.
                     
-                    Return ONLY a valid JSON object.
+                    Return ONLY valid JSON.
                     Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
                     Text: {final_text[:8000]}
                     """
@@ -320,12 +302,11 @@ if submit_button:
                     try:
                         results_json = json.loads(clean_json_string(response.text))
                     except json.JSONDecodeError:
-                        # Secondary repair mechanism for syntax failures
                         repaired = response.text.replace('\n', ' ').replace('\\', '\\\\')
                         results_json = json.loads(clean_json_string(repaired))
                     
                     if results_json.get("status") == "error":
-                        st.error("No substantive assessment task could be identified.")
+                        st.error("No substantive assessment task identified.")
                     else:
                         results = results_json.get("audit_results", {})
                         doc_context = results_json.get("doc_context", "N/A")
@@ -335,7 +316,7 @@ if submit_button:
                         
                         st.divider()
                         st.info(f"**Diagnostic Focus:** {doc_context}")
-                        st.subheader(f"Total Integrity Score: {total_score}/50 ({actual_cat} Susceptibility)")
+                        st.subheader(f"Total Integrity Score: {total_score}/50")
                         
                         for cat, data in results.items():
                             score = int(data.get('score', 0))
