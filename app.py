@@ -99,7 +99,7 @@ def scrape_url(url):
     try:
         response = requests.get(url, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
-        tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li'])
+        tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li', 'td'])
         content = "\n".join([t.get_text() for t in tags])
         return content if content.strip() else "No readable text found."
     except Exception as e: return f"Error: {str(e)}"
@@ -108,19 +108,17 @@ def clean_json_string(raw_string):
     match = re.search(r'\{.*\}', raw_string, re.DOTALL)
     return match.group(0) if match else raw_string.strip()
 
-# 4. Global Registry Lookup (Cached to save quota)
 @st.cache_resource
 def discover_model(api_key):
     genai.configure(api_key=api_key)
     try:
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        # Prioritise Flash models as they are token-efficient
         flash_models = [m for m in models if 'flash' in m]
         return flash_models[0] if flash_models else models[0]
     except:
         return 'models/gemini-1.5-flash'
 
-# 5. Interface and Explainer
+# 4. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
 
@@ -146,7 +144,7 @@ with col_info2:
 
 st.divider()
 
-# 6. Form Block
+# 5. Form Block
 with st.form("audit_form"):
     st.subheader("1. Setup")
     setup_col1, setup_col2 = st.columns(2)
@@ -165,7 +163,7 @@ with st.form("audit_form"):
     
     submit_button = st.form_submit_button("Generate Diagnostic Report")
 
-# 7. Execution Logic
+# 6. Execution Logic
 api_key = st.secrets.get("GEMINI_API_KEY")
 
 if submit_button:
@@ -185,47 +183,59 @@ if submit_button:
         if not final_text:
             st.error("No assessment content provided.")
         else:
-            with st.spinner("Synchronising with synthetic endpoints..."):
+            with st.spinner("Running diagnostics."):
                 try:
-                    # Discover the correct model name ONCE
                     target_model = discover_model(api_key)
                     model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
                     
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: Identify the highest weighting task.
-                    STEP 2: Audit using 10 categories of Integrity Debt. 
-                    Return ONLY a JSON object.
-                    Text: {final_text[:5000]}
+                    
+                    STEP 1: IDENTIFICATION
+                    Scan text for assessment tasks. Look past module metadata. 
+                    Identify the specific entity with the highest credit weighting (e.g., "Architectural Portfolio", "Essay").
+                    In module descriptors, the primary task is found under headings like "Assessment Description" or "Weighting %".
+                    If no specific task is found, return JSON status: "error".
+                    
+                    STEP 2: AUDIT
+                    Analyse that identified task using the 10 categories of Integrity Debt. 
+                    RULES: Ground exclusively in text; state "No evidence found" if absent; lock temperature 0.0.
+                    
+                    Return ONLY a valid JSON object.
+                    Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
+                    Text: {final_text[:8000]}
                     """
                     
                     response = model.generate_content(prompt)
                     results_json = json.loads(clean_json_string(response.text))
                     
-                    results = results_json.get("audit_results", {})
-                    doc_context = results_json.get("doc_context", "N/A")
-                    top_imps = results_json.get("top_improvements", ["N/A", "N/A", "N/A"])
-                    total_score = sum([int(v.get('score', 0)) for v in results.values()])
-                    actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
-                    
-                    st.divider()
-                    st.info(f"**Diagnostic Focus:** {doc_context}")
-                    st.subheader(f"Total Integrity Score: {total_score}/50 ({actual_cat} Susceptibility)")
-                    
-                    for cat, data in results.items():
-                        score = int(data.get('score', 0))
-                        if score == 5: st.success(f"🟢 {cat} (Score: {score}/5)")
-                        elif score >= 3: st.warning(f"🟡 {cat} (Score: {score}/5)")
-                        else: st.error(f"🔴 {cat} (Score: {score}/5)")
-                        st.write(f"**Critique:** {data.get('critique', 'N/A')}")
+                    if results_json.get("status") == "error":
+                        st.error("No substantive assessment task could be identified in the provided text.")
+                    else:
+                        results = results_json.get("audit_results", {})
+                        doc_context = results_json.get("doc_context", "N/A")
+                        top_imps = results_json.get("top_improvements", ["N/A", "N/A", "N/A"])
+                        total_score = sum([int(v.get('score', 0)) for v in results.values()])
+                        actual_cat = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
+                        
+                        st.divider()
+                        st.info(f"**Diagnostic Focus:** {doc_context}")
+                        st.subheader(f"Total Integrity Score: {total_score}/50 ({actual_cat} Susceptibility)")
+                        
+                        for cat, data in results.items():
+                            score = int(data.get('score', 0))
+                            if score == 5: st.success(f"🟢 {cat} (Score: {score}/5)")
+                            elif score >= 3: st.warning(f"🟡 {cat} (Score: {score}/5)")
+                            else: st.error(f"🔴 {cat} (Score: {score}/5)")
+                            st.write(f"**Critique:** {data.get('critique', 'N/A')}")
 
-                    pdf = IntegrityPDF()
-                    pdf.add_page()
-                    pdf.add_summary(actual_cat, total_score, top_imps, doc_context)
-                    for cat, data in results.items():
-                        pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
-                    
-                    st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
+                        pdf = IntegrityPDF()
+                        pdf.add_page()
+                        pdf.add_summary(actual_cat, total_score, top_imps, doc_context)
+                        for cat, data in results.items():
+                            pdf.add_category(cat, int(data.get('score', 0)), data.get('critique', 'N/A'), data.get('question', 'N/A'), data.get('quote', 'N/A'))
+                        
+                        st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
 
                 except exceptions.ResourceExhausted:
                     st.error("The API quota is full. Please wait sixty seconds.")
