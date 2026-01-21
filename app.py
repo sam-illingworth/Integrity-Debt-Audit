@@ -105,9 +105,7 @@ def scrape_url(url):
     except Exception as e: return f"Error: {str(e)}"
 
 def clean_json_string(raw_string):
-    # Remove markdown code blocks if present
     cleaned = re.sub(r'```json\s*|\s*```', '', raw_string)
-    # Target only the outermost curly braces
     match = re.search(r'\{.*\}', cleaned, re.DOTALL)
     return match.group(0) if match else cleaned.strip()
 
@@ -197,7 +195,7 @@ if submit_button:
                     STEP 1: IDENTIFICATION
                     Scan text for assessment tasks. Look past module metadata. 
                     Identify the entity with the highest credit weighting (e.g., "Architectural Portfolio").
-                    If no specific task is found, return JSON status: "error".
+                    If no specific task is identified, return JSON status: "error".
                     
                     STEP 2: AUDIT
                     Analyse that task using the 10 categories of Integrity Debt. 
@@ -205,7 +203,8 @@ if submit_button:
                     - Ground exclusively in text.
                     - State "No evidence found" if absent.
                     - Lock temperature 0.0.
-                    - Ensure ALL text values in JSON are escaped and contain no unescaped quotes.
+                    - Ensure ALL text values in JSON are properly escaped with double backslashes.
+                    - Do not use unescaped double quotes or colons inside text strings.
                     
                     Return ONLY a valid JSON object.
                     Structure: {{"status": "success", "doc_context": "Task title", "audit_results": {{cat: {{score, critique, question, quote}}}}, "top_improvements": [str, str, str]}}
@@ -215,14 +214,13 @@ if submit_button:
                     response = model.generate_content(prompt)
                     try:
                         results_json = json.loads(clean_json_string(response.text))
-                    except json.JSONDecodeError as je:
-                        # Attempt secondary repair of the string if standard parsing fails
-                        st.warning("Diagnostic output required repair. Analysis continuing.")
+                    except json.JSONDecodeError:
+                        # Secondary repair mechanism for syntax failures
                         repaired = response.text.replace('\n', ' ').replace('\\', '\\\\')
                         results_json = json.loads(clean_json_string(repaired))
                     
                     if results_json.get("status") == "error":
-                        st.error("No substantive assessment task could be identified in the provided text.")
+                        st.error("No substantive assessment task could be identified.")
                     else:
                         results = results_json.get("audit_results", {})
                         doc_context = results_json.get("doc_context", "N/A")
