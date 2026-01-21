@@ -108,7 +108,19 @@ def clean_json_string(raw_string):
     match = re.search(r'\{.*\}', raw_string, re.DOTALL)
     return match.group(0) if match else raw_string.strip()
 
-# 4. Interface and Explainer
+# 4. Global Registry Lookup (Cached to save quota)
+@st.cache_resource
+def discover_model(api_key):
+    genai.configure(api_key=api_key)
+    try:
+        models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # Prioritise Flash models as they are token-efficient
+        flash_models = [m for m in models if 'flash' in m]
+        return flash_models[0] if flash_models else models[0]
+    except:
+        return 'models/gemini-1.5-flash'
+
+# 5. Interface and Explainer
 st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
 
@@ -134,7 +146,7 @@ with col_info2:
 
 st.divider()
 
-# 5. Form Block
+# 6. Form Block
 with st.form("audit_form"):
     st.subheader("1. Setup")
     setup_col1, setup_col2 = st.columns(2)
@@ -153,7 +165,7 @@ with st.form("audit_form"):
     
     submit_button = st.form_submit_button("Generate Diagnostic Report")
 
-# 6. Execution Logic
+# 7. Execution Logic
 api_key = st.secrets.get("GEMINI_API_KEY")
 
 if submit_button:
@@ -173,12 +185,11 @@ if submit_button:
         if not final_text:
             st.error("No assessment content provided.")
         else:
-            with st.spinner("Analysing assessment integrity..."):
-                time.sleep(3) # Mandatory wait to clear burst quota
+            with st.spinner("Synchronising with synthetic endpoints..."):
                 try:
-                    genai.configure(api_key=api_key)
-                    # Use a single direct model call to save quota on list_models
-                    model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"temperature": 0.0})
+                    # Discover the correct model name ONCE
+                    target_model = discover_model(api_key)
+                    model = genai.GenerativeModel(target_model, generation_config={"temperature": 0.0})
                     
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
@@ -219,13 +230,4 @@ if submit_button:
                 except exceptions.ResourceExhausted:
                     st.error("The API quota is full. Please wait sixty seconds.")
                 except Exception as e:
-                    # Attempt second model fallback only if first fails with 404
-                    if "404" in str(e):
-                        try:
-                            model = genai.GenerativeModel('models/gemini-1.5-flash', generation_config={"temperature": 0.0})
-                            response = model.generate_content(prompt)
-                            # (Processing logic remains same as above)
-                        except:
-                            st.error(f"Audit failed: {e}")
-                    else:
-                        st.error(f"Audit failed: {e}")
+                    st.error(f"Audit failed: {e}")
