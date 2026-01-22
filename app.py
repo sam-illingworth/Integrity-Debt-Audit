@@ -65,28 +65,26 @@ class IntegrityPDF(FPDF):
         return text_str.encode('latin-1', 'replace').decode('latin-1')
 
     def add_summary(self, actual, score, improvements, doc_context):
+        eff_width = self.w - self.l_margin - self.r_margin
         self.set_font('helvetica', 'B', 16)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Executive Summary", 0, 1)
         self.ln(2)
         
-        # Calculate available width dynamically
-        eff_width = self.w - self.l_margin - self.r_margin
-        
         self.set_fill_color(*self.light_grey)
         self.set_draw_color(220, 220, 220)
         
-        # Context Box
+        # Context row
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
         self.cell(eff_width, 10, f"  Assessed Context: {self.safe_text(doc_context)}", 1, 1, 'L', True)
         
-        # Scoring Row
+        # Score row
         sc_col = self.success if score >= 40 else self.warning if score >= 25 else self.danger
         self.set_text_color(*self.primary_color)
-        self.cell(eff_width/2, 10, f"  Total Integrity Score: ", 1, 0, 'L', True)
+        self.cell(eff_width * 0.5, 10, f"  Total Integrity Score:", 1, 0, 'L', True)
         self.set_text_color(*sc_col)
-        self.cell(eff_width/2, 10, f"{score}/50 ({actual} Susceptibility)  ", 1, 1, 'R', True)
+        self.cell(eff_width * 0.5, 10, f"{score}/50 ({actual} Susceptibility)  ", 1, 1, 'R', True)
         
         self.ln(10)
         self.set_font('helvetica', 'B', 14)
@@ -101,18 +99,21 @@ class IntegrityPDF(FPDF):
         self.ln(10)
 
     def add_category(self, name, score, critique, question, quote):
+        eff_width = self.w - self.l_margin - self.r_margin
         accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
         status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
-        start_y = self.get_y()
+        
+        # Heading with color bar
         self.set_fill_color(*accent)
-        self.rect(15, start_y+2, 2, 8, 'F')
-        self.set_xy(18, start_y)
+        self.rect(self.l_margin, self.get_y() + 2, 2, 8, 'F')
+        self.set_x(self.l_margin + 5)
         self.set_font('helvetica', 'B', 12)
         self.set_text_color(*self.primary_color)
-        self.cell(130, 12, f" {self.safe_text(name)}", 0, 0, 'L')
+        self.cell(eff_width * 0.7, 12, self.safe_text(name), 0, 0)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*accent)
-        self.cell(0, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
+        self.cell(eff_width * 0.3 - 5, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
+        
         self.ln(2)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
@@ -121,6 +122,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
+        
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Dialogue Question:", 0, 1)
@@ -128,6 +130,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(question))
         self.ln(3)
+        
         self.set_font('helvetica', 'B', 9)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Evidence Reference:", 0, 1)
@@ -252,6 +255,7 @@ if submit_button:
                             elif sc >= 3: st.warning(f"🟡 {c} ({sc}/5)")
                             else: st.error(f"🔴 {c} ({sc}/5)")
                             st.write(d.get('critique', 'N/A'))
+                        
                         pdf = IntegrityPDF()
                         pdf.alias_nb_pages()
                         pdf.add_page()
