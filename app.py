@@ -69,33 +69,25 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Executive Summary", 0, 1)
         self.ln(2)
+        
+        # Calculate available width dynamically to prevent "Not enough horizontal space" error
+        eff_width = self.w - self.l_margin - self.r_margin
+        
         self.set_fill_color(*self.light_grey)
         self.set_draw_color(220, 220, 220)
-        box_y = self.get_y()
-        self.rect(15, box_y, 180, 40, 'FD')
-        self.set_xy(20, box_y + 5)
+        # Summary Box
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
-        self.cell(45, 8, "Assessed Context:", 0, 0)
-        self.set_font('helvetica', '', 11)
-        self.set_text_color(*self.text_color_val)
-        self.multi_cell(125, 8, self.safe_text(doc_context))
-        self.set_xy(20, self.get_y() + 2)
-        self.set_font('helvetica', 'B', 11)
-        self.set_text_color(*self.primary_color)
-        self.cell(45, 8, "Total Integrity Score:", 0, 0)
+        self.cell(eff_width, 10, f"  Assessed Context: {self.safe_text(doc_context)}", 1, 1, 'L', True)
+        
+        # Scoring Row
         sc_col = self.success if score >= 40 else self.warning if score >= 25 else self.danger
-        self.set_font('helvetica', 'B', 14)
-        self.set_text_color(*sc_col)
-        self.cell(30, 8, f"{score}/50", 0, 0)
-        self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
-        self.cell(35, 8, "Susceptibility:", 0, 0)
-        self.set_font('helvetica', 'B', 12)
+        self.cell(eff_width/2, 10, f"  Total Integrity Score: ", 1, 0, 'L', True)
         self.set_text_color(*sc_col)
-        self.cell(40, 8, actual, 0, 1)
-        self.set_y(box_y + 45)
-        self.ln(5)
+        self.cell(eff_width/2, 10, f"{score}/50 ({actual} Susceptibility)  ", 1, 1, 'R', True)
+        
+        self.ln(10)
         self.set_font('helvetica', 'B', 14)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
@@ -231,7 +223,7 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: Identify highest credit task (e.g., "Architectural Portfolio").
+                    STEP 1: Identify highest credit task.
                     STEP 2: Audit using 10 categories of Integrity Debt. 
                     RULES: Ground in text; lock temp 0.0; return ONLY valid JSON; escape all colons and quotes in values.
                     Text: {final_text[:8000]}
@@ -249,7 +241,7 @@ if submit_button:
                         ctx = res_json.get("doc_context", "N/A")
                         imps = res_json.get("top_improvements", ["N/A", "N/A", "N/A"])
                         score = sum([int(v.get('score', 0)) for v in audit.values()])
-                        cat = "Low" if score >= 40 else "Medium" if score >= 25 else "High"
+                        cat_res = "Low" if score >= 40 else "Medium" if score >= 25 else "High"
                         st.divider()
                         st.info(f"**Diagnostic Focus:** {ctx}")
                         st.subheader(f"Total Integrity Score: {score}/50")
@@ -262,7 +254,7 @@ if submit_button:
                         pdf = IntegrityPDF()
                         pdf.alias_nb_pages()
                         pdf.add_page()
-                        pdf.add_summary(cat, score, imps, ctx)
+                        pdf.add_summary(cat_res, score, imps, ctx)
                         for c, d in audit.items():
                             pdf.add_category(c, int(d.get('score', 0)), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
                         st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
