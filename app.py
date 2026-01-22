@@ -70,12 +70,13 @@ class IntegrityPDF(FPDF):
         self.cell(0, 10, "Executive Summary", 0, 1)
         self.ln(2)
         
-        # Calculate available width dynamically to prevent "Not enough horizontal space" error
+        # Calculate available width dynamically
         eff_width = self.w - self.l_margin - self.r_margin
         
         self.set_fill_color(*self.light_grey)
         self.set_draw_color(220, 220, 220)
-        # Summary Box
+        
+        # Context Box
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
         self.cell(eff_width, 10, f"  Assessed Context: {self.safe_text(doc_context)}", 1, 1, 'L', True)
@@ -223,7 +224,7 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: Identify highest credit task.
+                    STEP 1: Identify task with highest weighting.
                     STEP 2: Audit using 10 categories of Integrity Debt. 
                     RULES: Ground in text; lock temp 0.0; return ONLY valid JSON; escape all colons and quotes in values.
                     Text: {final_text[:8000]}
