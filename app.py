@@ -65,28 +65,37 @@ class IntegrityPDF(FPDF):
         return text_str.encode('latin-1', 'replace').decode('latin-1')
 
     def add_summary(self, actual, score, improvements, doc_context):
-        eff_width = self.w - self.l_margin - self.r_margin
         self.set_font('helvetica', 'B', 16)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Executive Summary", 0, 1)
         self.ln(2)
-        
         self.set_fill_color(*self.light_grey)
         self.set_draw_color(220, 220, 220)
-        
-        # Context row
+        box_y = self.get_y()
+        self.rect(15, box_y, 180, 40, 'FD')
+        self.set_xy(20, box_y + 5)
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
-        self.cell(eff_width, 10, f"  Assessed Context: {self.safe_text(doc_context)}", 1, 1, 'L', True)
-        
-        # Score row
-        sc_col = self.success if score >= 40 else self.warning if score >= 25 else self.danger
+        self.cell(45, 8, "Assessed Context:", 0, 0)
+        self.set_font('helvetica', '', 11)
+        self.set_text_color(*self.text_color_val)
+        self.multi_cell(125, 8, self.safe_text(doc_context))
+        self.set_xy(20, self.get_y() + 2)
+        self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
-        self.cell(eff_width * 0.5, 10, f"  Total Integrity Score:", 1, 0, 'L', True)
+        self.cell(45, 8, "Total Integrity Score:", 0, 0)
+        sc_col = self.success if score >= 40 else self.warning if score >= 25 else self.danger
+        self.set_font('helvetica', 'B', 14)
         self.set_text_color(*sc_col)
-        self.cell(eff_width * 0.5, 10, f"{score}/50 ({actual} Susceptibility)  ", 1, 1, 'R', True)
-        
-        self.ln(10)
+        self.cell(30, 8, f"{score}/50", 0, 0)
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(35, 8, "Susceptibility:", 0, 0)
+        self.set_font('helvetica', 'B', 12)
+        self.set_text_color(*sc_col)
+        self.cell(40, 8, actual, 0, 1)
+        self.set_y(box_y + 45)
+        self.ln(5)
         self.set_font('helvetica', 'B', 14)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
@@ -99,21 +108,18 @@ class IntegrityPDF(FPDF):
         self.ln(10)
 
     def add_category(self, name, score, critique, question, quote):
-        eff_width = self.w - self.l_margin - self.r_margin
         accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
         status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
-        
-        # Heading with color bar
+        start_y = self.get_y()
         self.set_fill_color(*accent)
-        self.rect(self.l_margin, self.get_y() + 2, 2, 8, 'F')
-        self.set_x(self.l_margin + 5)
+        self.rect(15, start_y+2, 2, 8, 'F')
+        self.set_xy(18, start_y)
         self.set_font('helvetica', 'B', 12)
         self.set_text_color(*self.primary_color)
-        self.cell(eff_width * 0.7, 12, self.safe_text(name), 0, 0)
+        self.cell(130, 12, f" {self.safe_text(name)}", 0, 0, 'L')
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*accent)
-        self.cell(eff_width * 0.3 - 5, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
-        
+        self.cell(0, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
         self.ln(2)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
@@ -122,7 +128,6 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
-        
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Dialogue Question:", 0, 1)
@@ -130,7 +135,6 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(question))
         self.ln(3)
-        
         self.set_font('helvetica', 'B', 9)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Evidence Reference:", 0, 1)
@@ -227,7 +231,7 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: Identify task with highest weighting.
+                    STEP 1: Identify highest credit task (e.g., "Architectural Portfolio").
                     STEP 2: Audit using 10 categories of Integrity Debt. 
                     RULES: Ground in text; lock temp 0.0; return ONLY valid JSON; escape all colons and quotes in values.
                     Text: {final_text[:8000]}
@@ -245,7 +249,7 @@ if submit_button:
                         ctx = res_json.get("doc_context", "N/A")
                         imps = res_json.get("top_improvements", ["N/A", "N/A", "N/A"])
                         score = sum([int(v.get('score', 0)) for v in audit.values()])
-                        cat_res = "Low" if score >= 40 else "Medium" if score >= 25 else "High"
+                        cat = "Low" if score >= 40 else "Medium" if score >= 25 else "High"
                         st.divider()
                         st.info(f"**Diagnostic Focus:** {ctx}")
                         st.subheader(f"Total Integrity Score: {score}/50")
@@ -255,11 +259,10 @@ if submit_button:
                             elif sc >= 3: st.warning(f"🟡 {c} ({sc}/5)")
                             else: st.error(f"🔴 {c} ({sc}/5)")
                             st.write(d.get('critique', 'N/A'))
-                        
                         pdf = IntegrityPDF()
                         pdf.alias_nb_pages()
                         pdf.add_page()
-                        pdf.add_summary(cat_res, score, imps, ctx)
+                        pdf.add_summary(cat, score, imps, ctx)
                         for c, d in audit.items():
                             pdf.add_category(c, int(d.get('score', 0)), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
                         st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
