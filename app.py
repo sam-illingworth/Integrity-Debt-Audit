@@ -103,7 +103,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        imps = improvements if isinstance(improvements, list) else ["Review details below"]
+        imps = improvements if isinstance(improvements, list) else ["Review audit categories below"]
         for i, imp in enumerate(imps[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
@@ -114,7 +114,6 @@ class IntegrityPDF(FPDF):
 
     def add_category(self, name, score, critique, question, quote):
         accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
-        status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
         self.set_x(20)
         start_y = self.get_y()
         self.set_fill_color(*accent)
@@ -125,34 +124,34 @@ class IntegrityPDF(FPDF):
         self.cell(120, 12, f" {self.safe_text(name)}", 0, 0, 'L')
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*accent)
-        self.cell(0, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
+        self.cell(0, 12, f"Score: {score}/5", 0, 1, 'R')
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Critique:", 0, 1)
-        self.set_x(20)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
+        self.set_x(20)
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Dialogue Question:", 0, 1)
-        self.set_x(20)
         self.set_font('helvetica', 'I', 10)
         self.set_text_color(*self.text_color_val)
+        self.set_x(20)
         self.multi_cell(0, 6, self.safe_text(question))
         self.ln(3)
         self.set_x(20)
         self.set_font('helvetica', 'B', 9)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Evidence Reference:", 0, 1)
-        self.set_x(20)
         self.set_font('courier', '', 9) 
         self.set_text_color(80, 80, 80)
         self.set_fill_color(250, 250, 250)
         self.set_draw_color(230, 230, 230)
+        self.set_x(20)
         self.multi_cell(0, 5, f"\"{self.safe_text(quote)}\"", 1, 'L', True)
         self.ln(8)
 
@@ -163,7 +162,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, " Strategic Consultancy & Bespoke Support", 0, 1, 'L', True)
-        self.set_fill_color(250, 250, 250)
+        self.set_fill_color(245, 247, 250)
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
@@ -260,44 +259,43 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: IDENTIFICATION. Identify assessment with highest credit weighting (e.g., Portfolio). Ignore metadata.
-                    STEP 2: AUDIT. Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
+                    STEP 1: Identify assessment with highest credit weighting (e.g., Portfolio). Ignore metadata.
+                    STEP 2: Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
-                    res_raw = clean_json_string(response.text)
+                    res_raw = response.text
+                    json_raw = clean_json_string(res_raw)
                     try:
-                        res_json = json.loads(res_raw)
+                        res_json = json.loads(json_raw)
                     except:
-                        rep = res_raw.replace('\n', ' ').replace('\\', '\\\\')
+                        rep = json_raw.replace('\n', ' ').replace('\\', '\\\\')
                         res_json = json.loads(rep)
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
+                        # UNIVERSAL NUMERICAL AGGREGATOR
                         audit_raw = res_json.get("audit_results", {})
-                        
-                        # ATOMIC EXTRACTION FOR UI AND PDF
-                        audit_items = []
-                        if isinstance(audit_raw, list):
-                            audit_items = audit_raw
-                        else:
-                            audit_items = list(audit_raw.values())
+                        audit_items = audit_raw if isinstance(audit_raw, list) else list(audit_raw.values())
 
                         total_score = 0
                         audit_dict = {}
                         for item in audit_items:
-                            # Direct numeric extraction
-                            raw_score = item.get('score') or item.get('points') or 0
+                            # Direct value extraction with string cleaning
+                            raw_val = str(item.get('score', item.get('points', '0')))
+                            # Strip any non-numeric chars except decimals
+                            clean_val = "".join(c for c in raw_val if c.isdigit() or c == '.')
                             try:
-                                s_val = int(float(raw_score))
+                                s_val = int(float(clean_val)) if clean_val else 0
                                 total_score += s_val
                             except: s_val = 0
                             
                             c_name = item.get('category') or item.get('name') or "Category"
+                            item['verified_score'] = s_val # Store for consistency
                             audit_dict[c_name] = item
 
-                        ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("title") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check categories below for details"]
+                        ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
+                        imps = res_json.get("top_improvements") or res_json.get("improvements") or ["Review findings below"]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                         
                         st.divider()
@@ -305,9 +303,7 @@ if submit_button:
                         st.subheader(f"Total Integrity Score: {total_score}/50")
                         
                         for c_name, d in audit_dict.items():
-                            sc = 0
-                            try: sc = int(float(d.get('score', 0)))
-                            except: pass
+                            sc = d.get('verified_score', 0)
                             if sc == 5: st.success(f"🟢 {c_name} ({sc}/5)")
                             elif sc >= 3: st.warning(f"🟡 {c_name} ({sc}/5)")
                             else: st.error(f"🔴 {c_name} ({sc}/5)")
@@ -318,10 +314,7 @@ if submit_button:
                         pdf.add_page()
                         pdf.add_summary(cat_res, total_score, imps, ctx)
                         for c_name, d in audit_dict.items():
-                            sc_val = 0
-                            try: sc_val = int(float(d.get('score', 0)))
-                            except: pass
-                            pdf.add_category(c_name, sc_val, d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
+                            pdf.add_category(c_name, d.get('verified_score', 0), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
                         pdf.add_contact_box()
                         st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
                 except Exception as e: st.error(f"Audit failed: {e}")
