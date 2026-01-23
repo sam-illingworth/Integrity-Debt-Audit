@@ -65,31 +65,29 @@ class IntegrityPDF(FPDF):
         return text_str.encode('latin-1', 'replace').decode('latin-1')
 
     def add_summary(self, actual, score, improvements, doc_context):
+        # Resolve dynamic width
+        usable_w = self.w - self.l_margin - self.r_margin
+        
         self.set_font('helvetica', 'B', 16)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Executive Summary", 0, 1)
         self.ln(2)
         
-        # Fixed-width calculations to prevent "No horizontal space" error
-        page_width = 210
-        m_left = 20
-        m_right = 20
-        usable_w = page_width - m_left - m_right
-        
         self.set_fill_color(*self.light_grey)
         self.set_draw_color(220, 220, 220)
         box_y = self.get_y()
-        self.rect(m_left, box_y, usable_w, 45, 'FD')
+        self.rect(self.l_margin, box_y, usable_w, 45, 'FD')
         
-        self.set_xy(m_left + 5, box_y + 5)
+        self.set_xy(self.l_margin + 5, box_y + 5)
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
         self.cell(40, 8, "Context:", 0, 0)
         self.set_font('helvetica', '', 11)
         self.set_text_color(*self.text_color_val)
-        self.multi_cell(usable_w - 50, 8, self.safe_text(doc_context))
+        # Dynamic calculation to prevent zero-width errors
+        self.multi_cell(usable_w - 45, 8, self.safe_text(doc_context))
         
-        self.set_xy(m_left + 5, box_y + 25)
+        self.set_xy(self.l_margin + 5, box_y + 28)
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
         self.cell(40, 8, "Integrity Score:", 0, 0)
@@ -122,7 +120,6 @@ class IntegrityPDF(FPDF):
         accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
         status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
         start_y = self.get_y()
-        # Side accent strip
         self.set_fill_color(*accent)
         self.rect(20, start_y + 2, 2, 8, 'F')
         
