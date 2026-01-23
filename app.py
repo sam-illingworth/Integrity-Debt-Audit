@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 import re
 from google.api_core import exceptions
 
-# 1. Configuration and Mobile CSS
+# 1. Configuration and Professional CSS
 st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", layout="wide")
 
 st.markdown("""
@@ -114,7 +114,6 @@ class IntegrityPDF(FPDF):
 
     def add_category(self, name, score, critique, question, quote):
         accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
-        status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
         self.set_x(20)
         start_y = self.get_y()
         self.set_fill_color(*accent)
@@ -125,34 +124,33 @@ class IntegrityPDF(FPDF):
         self.cell(120, 12, f" {self.safe_text(name)}", 0, 0, 'L')
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*accent)
-        self.cell(0, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
+        self.cell(0, 12, f"Score: {score}/5", 0, 1, 'R')
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
-        self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Critique:", 0, 1)
-        self.set_x(20)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
+        self.set_x(20)
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Dialogue Question:", 0, 1)
-        self.set_x(20)
         self.set_font('helvetica', 'I', 10)
         self.set_text_color(*self.text_color_val)
+        self.set_x(20)
         self.multi_cell(0, 6, self.safe_text(question))
         self.ln(3)
         self.set_x(20)
         self.set_font('helvetica', 'B', 9)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Evidence Reference:", 0, 1)
-        self.set_x(20)
         self.set_font('courier', '', 9) 
         self.set_text_color(80, 80, 80)
         self.set_fill_color(250, 250, 250)
         self.set_draw_color(230, 230, 230)
+        self.set_x(20)
         self.multi_cell(0, 5, f"\"{self.safe_text(quote)}\"", 1, 'L', True)
         self.ln(8)
 
@@ -163,7 +161,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, " Strategic Consultancy & Bespoke Support", 0, 1, 'L', True)
-        self.set_fill_color(250, 250, 250)
+        self.set_fill_color(245, 247, 250)
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
@@ -260,8 +258,9 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: IDENTIFICATION. Identify assessment with highest credit weighting (e.g., Portfolio). Ignore metadata.
-                    STEP 2: AUDIT. Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
+                    STEP 1: Identify assessment with highest credit weighting (e.g., Portfolio).
+                    STEP 2: Audit using 10 categories of Integrity Debt. 
+                    RULES: Ground in text; lock temp 0.0; return ONLY valid JSON; escape values.
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
@@ -275,64 +274,47 @@ if submit_button:
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
                         audit_raw = res_json.get("audit_results", {})
-                        
-                        # ATOMIC NUMERICAL HARVESTER
-                        audit_items = []
-                        if isinstance(audit_raw, list):
-                            audit_items = audit_raw
-                        else:
-                            audit_items = list(audit_raw.values())
+                        audit_items = audit_raw if isinstance(audit_raw, list) else list(audit_raw.values())
 
+                        # ARCHITECT-GRADE FAIL-SAFE EXTRACTION
                         total_score = 0
+                        # Extract integers adjacent to score-related keys in raw text
+                        score_matches = re.findall(r'"(?:score|points|rating|value)"\s*:\s*"?(\d+(?:\.\d+)?)"?', res_raw, re.IGNORECASE)
+                        if score_matches:
+                            total_score = int(sum(float(s) for s in score_matches))
+                        
                         audit_dict = {}
                         for item in audit_items:
-                            # Recursive scan for scores
-                            s_val = 0
-                            for k, v in item.items():
-                                if any(x in k.lower() for x in ["score", "points", "value", "rating"]):
-                                    try:
-                                        # Handle strings like "3/5"
-                                        extracted = str(v).split('/')[0]
-                                        s_val = int(float(extracted))
-                                        break
-                                    except: continue
-                            total_score += s_val
-                            # Safe category name
-                            c_name = item.get('category') or item.get('name') or item.get('title') or "Category"
+                            c_name = item.get('category') or item.get('name') or "Category"
                             audit_dict[c_name] = item
 
-                        # Universal fallback for summary variables
-                        ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("assessment_name") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check findings below"]
+                        ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
+                        imps = res_json.get("top_improvements") or res_json.get("improvements") or ["Review findings below"]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                         
                         st.divider()
                         st.info(f"**Diagnostic Focus:** {ctx}")
                         st.subheader(f"Total Integrity Score: {total_score}/50")
                         
-                        # Loop for UI display
                         for c_name, d in audit_dict.items():
                             sc = 0
-                            for k, v in d.items():
-                                if "score" in k.lower():
-                                    try: sc = int(float(str(v).split('/')[0])); break
-                                    except: continue
+                            item_raw = json.dumps(d)
+                            m = re.search(r'"score"\s*:\s*"?(\d+(?:\.\d+)?)"?', item_raw, re.IGNORECASE)
+                            if m: sc = int(float(m.group(1)))
                             if sc == 5: st.success(f"🟢 {c_name} ({sc}/5)")
                             elif sc >= 3: st.warning(f"🟡 {c_name} ({sc}/5)")
                             else: st.error(f"🔴 {c_name} ({sc}/5)")
                             st.write(d.get('critique', 'N/A'))
                         
-                        # PDF execution
                         pdf = IntegrityPDF()
                         pdf.alias_nb_pages()
                         pdf.add_page()
                         pdf.add_summary(cat_res, total_score, imps, ctx)
                         for c_name, d in audit_dict.items():
                             sc_val = 0
-                            for k, v in d.items():
-                                if "score" in k.lower():
-                                    try: sc_val = int(float(str(v).split('/')[0])); break
-                                    except: continue
+                            item_raw = json.dumps(d)
+                            m = re.search(r'"score"\s*:\s*"?(\d+(?:\.\d+)?)"?', item_raw, re.IGNORECASE)
+                            if m: sc_val = int(float(m.group(1)))
                             pdf.add_category(c_name, sc_val, d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
                         pdf.add_contact_box()
                         st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
