@@ -166,7 +166,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
-        contact_txt = "Professor Sam Illingworth provides strategic consultancy to help institutions move from diagnostic debt to resilient practice. I can support your team through bespoke curriculum redesign workshops, AI literacy audits, and policy development. Contact me to discuss how we can improve human agency in your synthetic systems."
+        contact_txt = "Professor Sam Illingworth provides strategic consultancy to move from diagnostic debt to resilient practice. I can support your team through bespoke curriculum redesign workshops, AI literacy audits, and policy development. Contact me to discuss how we can improve human agency in your synthetic systems."
         self.multi_cell(0, 6, self.safe_text(contact_txt), 1, 'L', True)
         self.ln(5)
         self.set_x(20)
@@ -259,47 +259,53 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: Identify assessment with highest weighting (e.g., Portfolio). Ignore metadata.
-                    STEP 2: Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
+                    STEP 1: IDENTIFICATION. Identify assessment with highest credit weighting (e.g., Portfolio). Ignore metadata.
+                    STEP 2: AUDIT. Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
+                    res_raw = clean_json_string(response.text)
                     try:
-                        res_json = json.loads(clean_json_string(response.text))
+                        res_json = json.loads(res_raw)
                     except:
-                        rep = response.text.replace('\n', ' ').replace('\\', '\\\\')
-                        res_json = json.loads(clean_json_string(rep))
+                        rep = res_raw.replace('\n', ' ').replace('\\', '\\\\')
+                        res_json = json.loads(rep)
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
                         audit_raw = res_json.get("audit_results", {})
+                        
+                        # ATOMIC DATA EXTRACTION
+                        audit_items = []
                         if isinstance(audit_raw, list):
                             audit_items = audit_raw
-                            audit = {item.get('category', 'Category'): item for item in audit_items}
                         else:
-                            audit = audit_raw
-                            audit_items = audit_raw.values()
-                        
+                            audit_items = list(audit_raw.values())
+
+                        total_score = 0
+                        audit_dict = {}
+                        for item in audit_items:
+                            # Direct numeric extraction with type forcing
+                            raw_score = item.get('score', 0)
+                            try:
+                                s_val = int(float(raw_score))
+                                total_score += s_val
+                            except: s_val = 0
+                            
+                            c_name = item.get('category') or item.get('name') or "Category"
+                            audit_dict[c_name] = item
+
                         ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
                         imps = res_json.get("top_improvements") or res_json.get("improvements") or ["Review findings below"]
-                        
-                        # EXPLICIT INTEGER CASTING LAYER
-                        total_score = 0
-                        for v in audit_items:
-                            try:
-                                total_score += int(v.get('score', 0))
-                            except (ValueError, TypeError):
-                                pass
-                        
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                         
                         st.divider()
                         st.info(f"**Diagnostic Focus:** {ctx}")
                         st.subheader(f"Total Integrity Score: {total_score}/50")
                         
-                        for c_name, d in audit.items():
+                        for c_name, d in audit_dict.items():
                             sc = 0
-                            try: sc = int(d.get('score', 0))
+                            try: sc = int(float(d.get('score', 0)))
                             except: pass
                             if sc == 5: st.success(f"🟢 {c_name} ({sc}/5)")
                             elif sc >= 3: st.warning(f"🟡 {c_name} ({sc}/5)")
@@ -310,9 +316,9 @@ if submit_button:
                         pdf.alias_nb_pages()
                         pdf.add_page()
                         pdf.add_summary(cat_res, total_score, imps, ctx)
-                        for c_name, d in audit.items():
+                        for c_name, d in audit_dict.items():
                             sc_val = 0
-                            try: sc_val = int(d.get('score', 0))
+                            try: sc_val = int(float(d.get('score', 0)))
                             except: pass
                             pdf.add_category(c_name, sc_val, d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
                         pdf.add_contact_box()
