@@ -7,7 +7,6 @@ from fpdf import FPDF
 import io
 import requests
 from bs4 import BeautifulSoup
-import time
 import re
 from google.api_core import exceptions
 
@@ -104,7 +103,8 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        for i, imp in enumerate(improvements, 1):
+        imps = improvements if isinstance(improvements, list) else ["Review findings below"]
+        for i, imp in enumerate(imps[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
             self.cell(10, 8, f"{i}.", 0, 0)
@@ -274,20 +274,16 @@ if submit_button:
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
                         audit_raw = res_json.get("audit_results", {})
-                        
-                        # STRUCTURAL NORMALISER for audit_results
                         if isinstance(audit_raw, list):
                             audit_items = audit_raw
-                            # Convert list to dict for compatibility with category name rendering
                             audit = {item.get('category', 'Category'): item for item in audit_items}
                         else:
                             audit = audit_raw
                             audit_items = audit_raw.values()
                         
-                        ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or res_json.get("improvements") or ["Check categories below"]
+                        ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("title") or "Assessment Audit"
+                        imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check categories below for details"]
                         
-                        # Calculation logic that respects both list and dict types
                         score = sum([int(v.get('score', 0)) for v in audit_items])
                         cat_res = "Low" if score >= 40 else "Medium" if score >= 25 else "High"
                         
