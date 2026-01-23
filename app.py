@@ -103,7 +103,8 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        for i, imp in enumerate(improvements[:3], 1):
+        imps = improvements if isinstance(improvements, list) else ["Review findings below"]
+        for i, imp in enumerate(imps[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
             self.cell(10, 8, f"{i}.", 0, 0)
@@ -275,7 +276,7 @@ if submit_button:
                     else:
                         audit_raw = res_json.get("audit_results", {})
                         
-                        # PREEMPTIVE RECURSIVE HARVESTER
+                        # ATOMIC NUMERICAL HARVESTER
                         audit_items = []
                         if isinstance(audit_raw, list):
                             audit_items = audit_raw
@@ -285,23 +286,22 @@ if submit_button:
                         total_score = 0
                         audit_dict = {}
                         for item in audit_items:
-                            # Harvest numerical score regardless of key name or nesting
+                            # Recursive scan for scores
                             s_val = 0
-                            # Search depth 1 for any keys containing score keywords
                             for k, v in item.items():
                                 if any(x in k.lower() for x in ["score", "points", "value", "rating"]):
                                     try:
-                                        # Handle strings like "3/5" or floating points
+                                        # Handle strings like "3/5"
                                         extracted = str(v).split('/')[0]
                                         s_val = int(float(extracted))
                                         break
                                     except: continue
                             total_score += s_val
-                            # Fallback category naming
+                            # Safe category name
                             c_name = item.get('category') or item.get('name') or item.get('title') or "Category"
                             audit_dict[c_name] = item
 
-                        # Resolve summary data with universal fallbacks
+                        # Universal fallback for summary variables
                         ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("assessment_name") or "Assessment Audit"
                         imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check findings below"]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
@@ -310,6 +310,7 @@ if submit_button:
                         st.info(f"**Diagnostic Focus:** {ctx}")
                         st.subheader(f"Total Integrity Score: {total_score}/50")
                         
+                        # Loop for UI display
                         for c_name, d in audit_dict.items():
                             sc = 0
                             for k, v in d.items():
@@ -321,6 +322,7 @@ if submit_button:
                             else: st.error(f"🔴 {c_name} ({sc}/5)")
                             st.write(d.get('critique', 'N/A'))
                         
+                        # PDF execution
                         pdf = IntegrityPDF()
                         pdf.alias_nb_pages()
                         pdf.add_page()
