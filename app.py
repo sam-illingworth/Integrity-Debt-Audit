@@ -22,7 +22,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Professional PDF Class
+# 2. Professional PDF Report Generator Class
 class IntegrityPDF(FPDF):
     def __init__(self):
         super().__init__()
@@ -103,7 +103,8 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        for i, imp in enumerate(improvements[:3], 1):
+        imps = improvements if isinstance(improvements, list) else ["Review findings below"]
+        for i, imp in enumerate(imps[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
             self.cell(10, 8, f"{i}.", 0, 0)
@@ -166,7 +167,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
-        contact_txt = "Professor Sam Illingworth provides strategic consultancy to move from diagnostic debt to resilient practice. I can support your team through bespoke curriculum redesign workshops, AI literacy audits, and policy development. Contact me to discuss how we can improve human agency in your synthetic systems."
+        contact_txt = "As a Full Professor with over 20 years experience of working in higher education, I can help interpret your diagnostic results to develop AI-resilient assessments and curricula. Contact me to discuss your specific organisational requirements."
         self.multi_cell(0, 6, self.safe_text(contact_txt), 1, 'L', True)
         self.ln(5)
         self.set_x(20)
@@ -285,7 +286,7 @@ if submit_button:
                         total_score = 0
                         audit_dict = {}
                         for item in audit_items:
-                            # Direct numeric extraction with type forcing
+                            # Direct numeric extraction
                             raw_score = item.get('score', 0)
                             try:
                                 s_val = int(float(raw_score))
@@ -295,8 +296,8 @@ if submit_button:
                             c_name = item.get('category') or item.get('name') or "Category"
                             audit_dict[c_name] = item
 
-                        ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or res_json.get("improvements") or ["Review findings below"]
+                        ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("title") or "Assessment Audit"
+                        imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check categories below for details"]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                         
                         st.divider()
