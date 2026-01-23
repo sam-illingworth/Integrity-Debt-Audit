@@ -260,7 +260,7 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: IDENTIFICATION. Identify assessment with highest credit weighting (e.g., Portfolio). Ignore administrative metadata.
+                    STEP 1: IDENTIFICATION. Identify assessment with highest weighting (e.g., Portfolio). Ignore metadata.
                     STEP 2: AUDIT. Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
                     Text: {final_text[:8000]}
                     """
@@ -273,10 +273,14 @@ if submit_button:
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
-                        # KEY FIX: Ensure keys match synth output exactly
                         audit = res_json.get("audit_results", {})
-                        ctx = res_json.get("doc_context", "Assessment Audit")
-                        imps = res_json.get("top_improvements", ["No improvements found"])
+                        
+                        # FUZZY KEY RESOLVER for doc_context
+                        ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("title") or "Assessment Audit"
+                        
+                        # FUZZY KEY RESOLVER for top_improvements
+                        imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check categories below for details"]
+                        
                         score = sum([int(v.get('score', 0)) for v in audit.values()])
                         cat_res = "Low" if score >= 40 else "Medium" if score >= 25 else "High"
                         
@@ -293,7 +297,6 @@ if submit_button:
                         pdf = IntegrityPDF()
                         pdf.alias_nb_pages()
                         pdf.add_page()
-                        # CORRECTED MAPPING: Using ctx and imps from json load
                         pdf.add_summary(cat_res, score, imps, ctx)
                         for c, d in audit.items():
                             pdf.add_category(c, int(d.get('score', 0)), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
