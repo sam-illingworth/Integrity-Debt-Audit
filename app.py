@@ -22,7 +22,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Professional PDF Report Generator Class
+# 2. Professional PDF Class
 class IntegrityPDF(FPDF):
     def __init__(self):
         super().__init__()
@@ -103,8 +103,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        imps = improvements if isinstance(improvements, list) else ["Review details below"]
-        for i, imp in enumerate(imps[:3], 1):
+        for i, imp in enumerate(improvements[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
             self.cell(10, 8, f"{i}.", 0, 0)
@@ -229,7 +228,7 @@ with c1:
     2. **Dialogue**: Use the dialogue questions in staff or student representative forums.
     3. **Redesign**: Focus on categories marked in **Red** (Vulnerable).
     """)
-    st.markdown("[Slow AI Substack](https://samillingworth.substack.com/)")
+    st.markdown("[Integrity Debt Audit Report](https://samillingworth.gumroad.com/l/integrity-debt-audit)")
 with c2:
     st.info("**The Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
 
@@ -276,7 +275,7 @@ if submit_button:
                     else:
                         audit_raw = res_json.get("audit_results", {})
                         
-                        # ATOMIC EXTRACTION FOR SCORING AND UI
+                        # PREEMPTIVE RECURSIVE HARVESTER
                         audit_items = []
                         if isinstance(audit_raw, list):
                             audit_items = audit_raw
@@ -286,17 +285,23 @@ if submit_button:
                         total_score = 0
                         audit_dict = {}
                         for item in audit_items:
-                            # Search for numerical score under any common key
-                            raw_sc = item.get('score') or item.get('points') or item.get('value') or 0
-                            try:
-                                s_val = int(float(raw_sc))
-                                total_score += s_val
-                            except: s_val = 0
-                            
-                            c_name = item.get('category') or item.get('name') or "Category"
+                            # Harvest numerical score regardless of key name or nesting
+                            s_val = 0
+                            # Search depth 1 for any keys containing score keywords
+                            for k, v in item.items():
+                                if any(x in k.lower() for x in ["score", "points", "value", "rating"]):
+                                    try:
+                                        # Handle strings like "3/5" or floating points
+                                        extracted = str(v).split('/')[0]
+                                        s_val = int(float(extracted))
+                                        break
+                                    except: continue
+                            total_score += s_val
+                            # Fallback category naming
+                            c_name = item.get('category') or item.get('name') or item.get('title') or "Category"
                             audit_dict[c_name] = item
 
-                        # Resolve summary data with fallback keys
+                        # Resolve summary data with universal fallbacks
                         ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("assessment_name") or "Assessment Audit"
                         imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check findings below"]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
@@ -307,8 +312,10 @@ if submit_button:
                         
                         for c_name, d in audit_dict.items():
                             sc = 0
-                            try: sc = int(float(d.get('score', 0)))
-                            except: pass
+                            for k, v in d.items():
+                                if "score" in k.lower():
+                                    try: sc = int(float(str(v).split('/')[0])); break
+                                    except: continue
                             if sc == 5: st.success(f"🟢 {c_name} ({sc}/5)")
                             elif sc >= 3: st.warning(f"🟡 {c_name} ({sc}/5)")
                             else: st.error(f"🔴 {c_name} ({sc}/5)")
@@ -320,8 +327,10 @@ if submit_button:
                         pdf.add_summary(cat_res, total_score, imps, ctx)
                         for c_name, d in audit_dict.items():
                             sc_val = 0
-                            try: sc_val = int(float(d.get('score', 0)))
-                            except: pass
+                            for k, v in d.items():
+                                if "score" in k.lower():
+                                    try: sc_val = int(float(str(v).split('/')[0])); break
+                                    except: continue
                             pdf.add_category(c_name, sc_val, d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
                         pdf.add_contact_box()
                         st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
