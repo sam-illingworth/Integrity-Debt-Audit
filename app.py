@@ -54,6 +54,7 @@ class IntegrityPDF(FPDF):
         self.line(20, self.get_y(), 190, self.get_y())
         self.set_font('helvetica', 'I', 8)
         self.set_text_color(128, 128, 128)
+        self.set_x(20) # Reset X before footer cell
         self.cell(0, 10, f'Slow AI Diagnostic Tool | Page {self.page_no()}/{{nb}}', 0, 0, 'C')
 
     def safe_text(self, text):
@@ -65,9 +66,10 @@ class IntegrityPDF(FPDF):
         return text_str.encode('latin-1', 'replace').decode('latin-1')
 
     def add_summary(self, actual, score, improvements, doc_context):
-        # Resolve dynamic width
-        usable_w = self.w - self.l_margin - self.r_margin
+        # Force hard width calculation
+        usable_w = 170 # Absolute safety for 210mm - 40mm margins
         
+        self.set_x(20)
         self.set_font('helvetica', 'B', 16)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Executive Summary", 0, 1)
@@ -76,21 +78,21 @@ class IntegrityPDF(FPDF):
         self.set_fill_color(*self.light_grey)
         self.set_draw_color(220, 220, 220)
         box_y = self.get_y()
-        self.rect(self.l_margin, box_y, usable_w, 45, 'FD')
+        self.rect(20, box_y, usable_w, 45, 'FD')
         
-        self.set_xy(self.l_margin + 5, box_y + 5)
+        self.set_xy(25, box_y + 5)
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
-        self.cell(40, 8, "Context:", 0, 0)
+        self.cell(35, 8, "Context:", 0, 0)
         self.set_font('helvetica', '', 11)
         self.set_text_color(*self.text_color_val)
-        # Dynamic calculation to prevent zero-width errors
-        self.multi_cell(usable_w - 45, 8, self.safe_text(doc_context))
+        # multi_cell must use fixed, non-calculating width here for stability
+        self.multi_cell(125, 8, self.safe_text(doc_context))
         
-        self.set_xy(self.l_margin + 5, box_y + 28)
+        self.set_xy(25, box_y + 28)
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
-        self.cell(40, 8, "Integrity Score:", 0, 0)
+        self.cell(35, 8, "Integrity Score:", 0, 0)
         sc_col = self.success if score >= 40 else self.warning if score >= 25 else self.danger
         self.set_font('helvetica', 'B', 14)
         self.set_text_color(*sc_col)
@@ -104,12 +106,14 @@ class IntegrityPDF(FPDF):
         self.cell(30, 8, actual, 0, 1)
         
         self.set_y(box_y + 50)
+        self.set_x(20)
         self.ln(5)
         self.set_font('helvetica', 'B', 14)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
         for i, imp in enumerate(improvements, 1):
+            self.set_x(20)
             self.set_text_color(*self.accent_blue)
             self.cell(10, 8, f"{i}.", 0, 0)
             self.set_text_color(*self.text_color_val)
@@ -119,6 +123,8 @@ class IntegrityPDF(FPDF):
     def add_category(self, name, score, critique, question, quote):
         accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
         status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
+        
+        self.set_x(20)
         start_y = self.get_y()
         self.set_fill_color(*accent)
         self.rect(20, start_y + 2, 2, 8, 'F')
@@ -131,25 +137,31 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*accent)
         self.cell(0, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
         
+        self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Critique:", 0, 1)
+        self.set_x(20)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
         
+        self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Dialogue Question:", 0, 1)
+        self.set_x(20)
         self.set_font('helvetica', 'I', 10)
         self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(question))
         self.ln(3)
         
+        self.set_x(20)
         self.set_font('helvetica', 'B', 9)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Evidence Reference:", 0, 1)
+        self.set_x(20)
         self.set_font('courier', '', 9) 
         self.set_text_color(80, 80, 80)
         self.set_fill_color(250, 250, 250)
