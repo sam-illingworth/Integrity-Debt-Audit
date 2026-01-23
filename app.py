@@ -22,7 +22,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Professional PDF Report Generator Class
+# 2. Professional PDF Class
 class IntegrityPDF(FPDF):
     def __init__(self):
         super().__init__()
@@ -103,8 +103,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        imps = improvements if isinstance(improvements, list) else ["Review findings below"]
-        for i, imp in enumerate(imps[:3], 1):
+        for i, imp in enumerate(improvements[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
             self.cell(10, 8, f"{i}.", 0, 0)
@@ -260,8 +259,8 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: IDENTIFICATION. Identify assessment with highest credit weighting (e.g., Portfolio). Ignore metadata.
-                    STEP 2: AUDIT. Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
+                    STEP 1: Identify assessment with highest weighting (e.g., Portfolio). Ignore metadata.
+                    STEP 2: Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
@@ -281,17 +280,27 @@ if submit_button:
                             audit = audit_raw
                             audit_items = audit_raw.values()
                         
-                        ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("title") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check categories below for details"]
+                        ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
+                        imps = res_json.get("top_improvements") or res_json.get("improvements") or ["Review findings below"]
                         
-                        score = sum([int(v.get('score', 0)) for v in audit_items])
-                        cat_res = "Low" if score >= 40 else "Medium" if score >= 25 else "High"
+                        # EXPLICIT INTEGER CASTING LAYER
+                        total_score = 0
+                        for v in audit_items:
+                            try:
+                                total_score += int(v.get('score', 0))
+                            except (ValueError, TypeError):
+                                pass
+                        
+                        cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                         
                         st.divider()
                         st.info(f"**Diagnostic Focus:** {ctx}")
-                        st.subheader(f"Total Integrity Score: {score}/50")
+                        st.subheader(f"Total Integrity Score: {total_score}/50")
+                        
                         for c_name, d in audit.items():
-                            sc = int(d.get('score', 0))
+                            sc = 0
+                            try: sc = int(d.get('score', 0))
+                            except: pass
                             if sc == 5: st.success(f"🟢 {c_name} ({sc}/5)")
                             elif sc >= 3: st.warning(f"🟡 {c_name} ({sc}/5)")
                             else: st.error(f"🔴 {c_name} ({sc}/5)")
@@ -300,9 +309,12 @@ if submit_button:
                         pdf = IntegrityPDF()
                         pdf.alias_nb_pages()
                         pdf.add_page()
-                        pdf.add_summary(cat_res, score, imps, ctx)
+                        pdf.add_summary(cat_res, total_score, imps, ctx)
                         for c_name, d in audit.items():
-                            pdf.add_category(c_name, int(d.get('score', 0)), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
+                            sc_val = 0
+                            try: sc_val = int(d.get('score', 0))
+                            except: pass
+                            pdf.add_category(c_name, sc_val, d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
                         pdf.add_contact_box()
                         st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
                 except Exception as e: st.error(f"Audit failed: {e}")
