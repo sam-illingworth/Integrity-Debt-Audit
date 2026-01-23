@@ -103,7 +103,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        imps = improvements if isinstance(improvements, list) else ["Review findings below"]
+        imps = improvements if isinstance(improvements, list) else ["Review details below"]
         for i, imp in enumerate(imps[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
@@ -276,7 +276,7 @@ if submit_button:
                     else:
                         audit_raw = res_json.get("audit_results", {})
                         
-                        # ATOMIC DATA EXTRACTION
+                        # ATOMIC EXTRACTION FOR SCORING AND UI
                         audit_items = []
                         if isinstance(audit_raw, list):
                             audit_items = audit_raw
@@ -286,18 +286,19 @@ if submit_button:
                         total_score = 0
                         audit_dict = {}
                         for item in audit_items:
-                            # Direct numeric extraction
-                            raw_score = item.get('score', 0)
+                            # Search for numerical score under any common key
+                            raw_sc = item.get('score') or item.get('points') or item.get('value') or 0
                             try:
-                                s_val = int(float(raw_score))
+                                s_val = int(float(raw_sc))
                                 total_score += s_val
                             except: s_val = 0
                             
                             c_name = item.get('category') or item.get('name') or "Category"
                             audit_dict[c_name] = item
 
-                        ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("title") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check categories below for details"]
+                        # Resolve summary data with fallback keys
+                        ctx = res_json.get("doc_context") or res_json.get("task_title") or res_json.get("assessment_name") or "Assessment Audit"
+                        imps = res_json.get("top_improvements") or res_json.get("improvements") or res_json.get("priorities") or ["Check findings below"]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                         
                         st.divider()
