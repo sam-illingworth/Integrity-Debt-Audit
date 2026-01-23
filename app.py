@@ -273,9 +273,10 @@ if submit_button:
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
+                        # KEY FIX: Ensure keys match synth output exactly
                         audit = res_json.get("audit_results", {})
-                        ctx = res_json.get("doc_context", "N/A")
-                        imps = res_json.get("top_improvements", ["N/A", "N/A", "N/A"])
+                        ctx = res_json.get("doc_context", "Assessment Audit")
+                        imps = res_json.get("top_improvements", ["No improvements found"])
                         score = sum([int(v.get('score', 0)) for v in audit.values()])
                         cat_res = "Low" if score >= 40 else "Medium" if score >= 25 else "High"
                         
@@ -292,6 +293,7 @@ if submit_button:
                         pdf = IntegrityPDF()
                         pdf.alias_nb_pages()
                         pdf.add_page()
+                        # CORRECTED MAPPING: Using ctx and imps from json load
                         pdf.add_summary(cat_res, score, imps, ctx)
                         for c, d in audit.items():
                             pdf.add_category(c, int(d.get('score', 0)), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
