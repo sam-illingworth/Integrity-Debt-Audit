@@ -162,7 +162,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, " Strategic Consultancy & Bespoke Support", 0, 1, 'L', True)
-        self.set_fill_color(250, 250, 250)
+        self.set_fill_color(245, 247, 250)
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
@@ -173,7 +173,7 @@ class IntegrityPDF(FPDF):
         self.set_font('helvetica', 'B', 10)
         self.cell(0, 6, "Email: sam.illingworth@gmail.com | Substack: https://samillingworth.substack.com/", 0, 1, 'C')
 
-# 3. Utilities
+# 3. Utilities - UGRADED FOR TOTAL BUFFER SCAN
 def extract_text(uploaded_file):
     text = ""
     try:
@@ -182,7 +182,15 @@ def extract_text(uploaded_file):
             for page in reader.pages: text += page.extract_text() or ""
         elif uploaded_file.name.endswith('.docx'):
             doc = Document(uploaded_file)
-            for para in doc.paragraphs: text += para.text + "\n"
+            # Flatten paragraphs
+            for para in doc.paragraphs: 
+                if para.text.strip(): text += para.text + "\n"
+            # Flatten tables (Crucial for Napier briefs)
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        if cell.text.strip(): text += cell.text + " "
+                    text += "\n"
     except Exception as e: st.error(f"Extraction error: {e}")
     return text
 
@@ -298,9 +306,11 @@ if submit_button:
                             audit_list = list(raw_audit.values()) if isinstance(raw_audit, dict) else []
 
                         for anchor in cat_anchors:
+                            # Recursive regex search for the score associated with the anchor
                             match = next((item for item in audit_list if isinstance(item, dict) and (anchor.lower() in str(item).lower())), None)
                             
                             if match:
+                                # Numerical extraction from potential string values
                                 item_json = json.dumps(match)
                                 sc_match = re.search(r'"(?:score|points|rating)"\s*:\s*"?(\d+)"?', item_json, re.IGNORECASE)
                                 s_val = int(sc_match.group(1)) if sc_match else 0
