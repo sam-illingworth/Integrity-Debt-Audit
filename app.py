@@ -103,7 +103,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        imps = improvements if isinstance(improvements, list) else ["Review audit categories below"]
+        imps = improvements if isinstance(improvements, list) else ["Review details below"]
         for i, imp in enumerate(imps[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
@@ -259,8 +259,8 @@ if submit_button:
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: Identify assessment with highest credit weighting (e.g., Portfolio). Ignore metadata.
-                    STEP 2: Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
+                    STEP 1: IDENTIFICATION. Identify assessment with highest credit weighting (e.g., Portfolio). Ignore metadata.
+                    STEP 2: AUDIT. Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
@@ -274,24 +274,27 @@ if submit_button:
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
-                        # UNIVERSAL NUMERICAL AGGREGATOR
                         audit_raw = res_json.get("audit_results", {})
+                        
+                        # RECURSIVE REGEX HARVESTER FOR TOTAL SCORE
+                        total_score = 0
+                        # Scans raw response for integers following score-related keys
+                        score_matches = re.findall(r'"(?:score|points|rating|value)"\s*:\s*"?(\d+(?:\.\d+)?)"?', json_raw, re.IGNORECASE)
+                        if score_matches:
+                            total_score = int(sum(float(s) for s in score_matches))
+                        
+                        # Handle audit items structure
                         audit_items = audit_raw if isinstance(audit_raw, list) else list(audit_raw.values())
 
-                        total_score = 0
                         audit_dict = {}
                         for item in audit_items:
-                            # Direct value extraction with string cleaning
-                            raw_val = str(item.get('score', item.get('points', '0')))
-                            # Strip any non-numeric chars except decimals
-                            clean_val = "".join(c for c in raw_val if c.isdigit() or c == '.')
-                            try:
-                                s_val = int(float(clean_val)) if clean_val else 0
-                                total_score += s_val
-                            except: s_val = 0
+                            # Use regex to harvest score per item for UI rendering
+                            item_str = json.dumps(item)
+                            m_score = re.search(r'"(?:score|points|value)"\s*:\s*"?(\d+(?:\.\d+)?)"?', item_str, re.IGNORECASE)
+                            sc_val = int(float(m_score.group(1))) if m_score else 0
                             
                             c_name = item.get('category') or item.get('name') or "Category"
-                            item['verified_score'] = s_val # Store for consistency
+                            item['verified_score'] = sc_val
                             audit_dict[c_name] = item
 
                         ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
