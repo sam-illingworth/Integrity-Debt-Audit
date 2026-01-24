@@ -258,7 +258,6 @@ if submit_button:
                     target = discover_model(api_key)
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
                     
-                    # CATEGORY ANCHORS
                     cat_anchors = [
                         "Conceptual Friction", "Environmental Logic", "Software Dependency",
                         "Process Transparency", "Contextual Binding", "Reflective Depth",
@@ -267,9 +266,10 @@ if submit_button:
                     
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    Identify assessment with highest weighting.
-                    Audit using exactly these 10 categories: {', '.join(cat_anchors)}.
-                    Ground in text; lock temp 0.0; return ONLY JSON; escape values.
+                    STEP 1: Identify assessment with highest weighting.
+                    STEP 2: Audit using exactly these 10 categories: {', '.join(cat_anchors)}.
+                    RULES: Ground in text; lock temp 0.0; return ONLY JSON; escape values.
+                    Format: {{"doc_context": "title", "audit_results": [{{ "category": "name", "score": 1-5, "critique": "text", "question": "text", "quote": "text" }}] }}
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
@@ -278,42 +278,36 @@ if submit_button:
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
-                        # ANCHOR SYNCHRONISATION
+                        # DETERMINISTIC EXTRACTION
                         total_score = 0
                         final_audit_results = {}
                         
-                        # Find the actual audit block in the response
                         raw_audit = res_json.get("audit_results", res_json)
                         if isinstance(raw_audit, list):
                             audit_list = raw_audit
                         else:
                             audit_list = list(raw_audit.values()) if isinstance(raw_audit, dict) else []
 
-                        # Sync with Anchors
                         for anchor in cat_anchors:
-                            # Search response for anchor
+                            # Recursive regex search for the score associated with the anchor
                             match = next((item for item in audit_list if isinstance(item, dict) and (anchor.lower() in str(item).lower())), None)
                             
                             if match:
-                                # Numerical Extraction
-                                raw_sc = match.get('score') or match.get('points') or 0
-                                try:
-                                    s_val = int(float(raw_sc))
-                                    total_score += s_val
-                                except: s_val = 0
+                                # Numerical extraction from potential string values
+                                item_json = json.dumps(match)
+                                sc_match = re.search(r'"(?:score|points|rating)"\s*:\s*"?(\d+)"?', item_json, re.IGNORECASE)
+                                s_val = int(sc_match.group(1)) if sc_match else 0
+                                total_score += s_val
                                 final_audit_results[anchor] = match
                                 final_audit_results[anchor]['verified_score'] = s_val
                             else:
-                                # Fail-safe: Placeholder with zero impact
                                 final_audit_results[anchor] = {
-                                    "critique": "Data extraction failed for this category.",
-                                    "verified_score": 0,
-                                    "question": "N/A",
-                                    "quote": "N/A"
+                                    "critique": "Data extraction failure.",
+                                    "verified_score": 0, "question": "N/A", "quote": "N/A"
                                 }
 
                         ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or ["Review individual categories for design recommendations."]
+                        imps = res_json.get("top_improvements") or ["Review individual categories."]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                         
                         st.divider()
