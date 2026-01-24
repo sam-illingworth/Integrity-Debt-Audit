@@ -162,7 +162,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, " Strategic Consultancy & Bespoke Support", 0, 1, 'L', True)
-        self.set_fill_color(245, 247, 250)
+        self.set_fill_color(250, 250, 250)
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
@@ -256,7 +256,16 @@ if submit_button:
             with st.spinner("Running diagnostics."):
                 try:
                     target = discover_model(api_key)
-                    model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
+                    # FROZEN SEED PROTOCOL
+                    model = genai.GenerativeModel(
+                        target, 
+                        generation_config={
+                            "temperature": 0.0,
+                            "top_p": 0.1,
+                            "top_k": 1,
+                            "seed": 42
+                        }
+                    )
                     
                     cat_anchors = [
                         "Conceptual Friction", "Environmental Logic", "Software Dependency",
