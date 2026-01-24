@@ -28,8 +28,9 @@ class IntegrityPDF(FPDF):
         super().__init__()
         self.set_margins(20, 20, 20)
         self.set_auto_page_break(auto=True, margin=20)
-        self.primary_color = (44, 62, 80)    
-        self.text_color_val = (50, 50, 50)       
+        self.primary_color = (45, 77, 74)     # #2D4D4A
+        self.bg_cream = (247, 243, 233)      # #F7F3E9
+        self.text_color_val = (45, 77, 74)   # #2D4D4A
         self.accent_blue = (52, 152, 219)    
         self.success = (39, 174, 96)         
         self.warning = (243, 156, 18)        
@@ -37,11 +38,11 @@ class IntegrityPDF(FPDF):
         self.light_grey = (245, 247, 250)    
 
     def header(self):
-        self.set_fill_color(*self.primary_color)
+        self.set_fill_color(*self.bg_cream)
         self.rect(0, 0, 210, 35, 'F')
         self.set_y(10)
         self.set_font('helvetica', 'B', 18)
-        self.set_text_color(255, 255, 255)
+        self.set_text_color(*self.primary_color)
         self.cell(0, 10, 'Integrity Debt Audit Report', 0, 1, 'L')
         self.set_font('helvetica', 'I', 11)
         self.cell(0, 8, 'Framework by Professor Sam Illingworth', 0, 1, 'L')
@@ -54,7 +55,7 @@ class IntegrityPDF(FPDF):
         self.set_font('helvetica', 'I', 8)
         self.set_text_color(128, 128, 128)
         self.set_x(20)
-        self.cell(0, 10, f'Slow AI Diagnostic Tool | Page {self.page_no()}/{{nb}}', 0, 0, 'C')
+        self.cell(0, 10, f'Integrity Debt Audit Report | Page {self.page_no()}/{{nb}}', 0, 0, 'C')
 
     def safe_text(self, text):
         if not text: return "N/A"
@@ -158,8 +159,8 @@ class IntegrityPDF(FPDF):
     def add_contact_box(self):
         self.ln(10)
         self.set_x(20)
-        self.set_fill_color(*self.primary_color)
-        self.set_text_color(255, 255, 255)
+        self.set_fill_color(*self.bg_cream)
+        self.set_text_color(*self.primary_color)
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, " Strategic Consultancy & Bespoke Support", 0, 1, 'L', True)
         self.set_fill_color(245, 247, 250)
@@ -173,7 +174,7 @@ class IntegrityPDF(FPDF):
         self.set_font('helvetica', 'B', 10)
         self.cell(0, 6, "Email: sam.illingworth@gmail.com | Substack: https://samillingworth.substack.com/", 0, 1, 'C')
 
-# 3. Utilities - UGRADED FOR TOTAL BUFFER SCAN
+# 3. Utilities
 def extract_text(uploaded_file):
     text = ""
     try:
@@ -182,10 +183,8 @@ def extract_text(uploaded_file):
             for page in reader.pages: text += page.extract_text() or ""
         elif uploaded_file.name.endswith('.docx'):
             doc = Document(uploaded_file)
-            # Flatten paragraphs
             for para in doc.paragraphs: 
                 if para.text.strip(): text += para.text + "\n"
-            # Flatten tables (Crucial for Napier briefs)
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
@@ -221,8 +220,11 @@ st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
 
 st.markdown("""
-### How to run this diagnostic
-Complete the setup fields below. This tool remains inert until you click the final button.
+### Introduction
+The **Integrity Debt Audit** is a diagnostic tool for Higher Education professionals to evaluate the resilience of their own curriculum. 
+**Important:** This is not AI detection software designed to catch students. It is a reflective instrument to aid curriculum design.
+
+For more information and full framework details, visit: [Beyond AI Detection: The Integrity Debt Audit](https://samillingworth.gumroad.com/l/integrity-debt-audit).
 """)
 
 c1, c2 = st.columns([2, 1])
@@ -236,7 +238,6 @@ with c1:
     2. **Dialogue**: Use the dialogue questions in staff or student representative forums.
     3. **Redesign**: Focus on categories marked in **Red** (Vulnerable).
     """)
-    st.markdown("[Integrity Debt Audit Report](https://samillingworth.gumroad.com/l/integrity-debt-audit)")
 with c2:
     st.info("**The Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
 
@@ -264,7 +265,6 @@ if submit_button:
             with st.spinner("Running diagnostics."):
                 try:
                     target = discover_model(api_key)
-                    # REPEATABILITY VIA ZERO TEMPERATURE AND GREEDY DECODING
                     model = genai.GenerativeModel(
                         target, 
                         generation_config={
@@ -295,7 +295,6 @@ if submit_button:
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
-                        # DETERMINISTIC EXTRACTION
                         total_score = 0
                         final_audit_results = {}
                         
@@ -306,11 +305,9 @@ if submit_button:
                             audit_list = list(raw_audit.values()) if isinstance(raw_audit, dict) else []
 
                         for anchor in cat_anchors:
-                            # Recursive regex search for the score associated with the anchor
                             match = next((item for item in audit_list if isinstance(item, dict) and (anchor.lower() in str(item).lower())), None)
                             
                             if match:
-                                # Numerical extraction from potential string values
                                 item_json = json.dumps(match)
                                 sc_match = re.search(r'"(?:score|points|rating)"\s*:\s*"?(\d+)"?', item_json, re.IGNORECASE)
                                 s_val = int(sc_match.group(1)) if sc_match else 0
