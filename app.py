@@ -103,8 +103,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, "Top 3 Priority Improvements", 0, 1)
         self.set_font('helvetica', '', 11)
-        imps = improvements if isinstance(improvements, list) else ["Review details below"]
-        for i, imp in enumerate(imps[:3], 1):
+        for i, imp in enumerate(improvements[:3], 1):
             self.set_x(20)
             self.set_text_color(*self.accent_blue)
             self.cell(10, 8, f"{i}.", 0, 0)
@@ -258,55 +257,70 @@ if submit_button:
                 try:
                     target = discover_model(api_key)
                     model = genai.GenerativeModel(target, generation_config={"temperature": 0.0})
+                    
+                    # CATEGORY ANCHORS
+                    cat_anchors = [
+                        "Conceptual Friction", "Environmental Logic", "Software Dependency",
+                        "Process Transparency", "Contextual Binding", "Reflective Depth",
+                        "Data Sovereignty", "Creative Divergence", "Technical Defence", "Ethical Agency"
+                    ]
+                    
                     prompt = f"""
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: IDENTIFICATION. Identify assessment with highest credit weighting (e.g., Portfolio). Ignore metadata.
-                    STEP 2: AUDIT. Audit using 10 categories of Integrity Debt. Ground in text; lock temp 0.0; return ONLY JSON; escape values.
+                    Identify assessment with highest weighting.
+                    Audit using exactly these 10 categories: {', '.join(cat_anchors)}.
+                    Ground in text; lock temp 0.0; return ONLY JSON; escape values.
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
-                    res_raw = response.text
-                    json_str = clean_json_string(res_raw)
-                    try:
-                        res_json = json.loads(json_str)
-                    except:
-                        rep = json_str.replace('\n', ' ').replace('\\', '\\\\')
-                        res_json = json.loads(rep)
+                    res_raw = clean_json_string(response.text)
+                    res_json = json.loads(res_raw)
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
-                        # UNIVERSAL NUMERICAL AGGREGATOR
-                        # This avoids key-dependency by harvesting all scores from raw response
+                        # ANCHOR SYNCHRONISATION
                         total_score = 0
-                        score_matches = re.findall(r'"(?:score|points|rating|value)"\s*:\s*"?(\d+(?:\.\d+)?)"?', json_str, re.IGNORECASE)
-                        if score_matches:
-                            total_score = int(sum(float(s) for s in score_matches))
+                        final_audit_results = {}
                         
-                        # Process items for UI display
-                        audit_raw = res_json.get("audit_results", {})
-                        audit_items = audit_raw if isinstance(audit_raw, list) else list(audit_raw.values())
+                        # Find the actual audit block in the response
+                        raw_audit = res_json.get("audit_results", res_json)
+                        if isinstance(raw_audit, list):
+                            audit_list = raw_audit
+                        else:
+                            audit_list = list(raw_audit.values()) if isinstance(raw_audit, dict) else []
 
-                        audit_dict = {}
-                        for item in audit_items:
-                            # Local score extraction per category
-                            item_raw = json.dumps(item)
-                            m = re.search(r'"score"\s*:\s*"?(\d+(?:\.\d+)?)"?', item_raw, re.IGNORECASE)
-                            sc_val = int(float(m.group(1))) if m else 0
+                        # Sync with Anchors
+                        for anchor in cat_anchors:
+                            # Search response for anchor
+                            match = next((item for item in audit_list if isinstance(item, dict) and (anchor.lower() in str(item).lower())), None)
                             
-                            c_name = item.get('category') or item.get('name') or "Category"
-                            item['verified_score'] = sc_val
-                            audit_dict[c_name] = item
+                            if match:
+                                # Numerical Extraction
+                                raw_sc = match.get('score') or match.get('points') or 0
+                                try:
+                                    s_val = int(float(raw_sc))
+                                    total_score += s_val
+                                except: s_val = 0
+                                final_audit_results[anchor] = match
+                                final_audit_results[anchor]['verified_score'] = s_val
+                            else:
+                                # Fail-safe: Placeholder with zero impact
+                                final_audit_results[anchor] = {
+                                    "critique": "Data extraction failed for this category.",
+                                    "verified_score": 0,
+                                    "question": "N/A",
+                                    "quote": "N/A"
+                                }
 
-                        # Summary variables
                         ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or res_json.get("improvements") or ["Review findings below"]
+                        imps = res_json.get("top_improvements") or ["Review individual categories for design recommendations."]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
                         
                         st.divider()
                         st.info(f"**Diagnostic Focus:** {ctx}")
                         st.subheader(f"Total Integrity Score: {total_score}/50")
                         
-                        for c_name, d in audit_dict.items():
+                        for c_name, d in final_audit_results.items():
                             sc = d.get('verified_score', 0)
                             if sc == 5: st.success(f"🟢 {c_name} ({sc}/5)")
                             elif sc >= 3: st.warning(f"🟡 {c_name} ({sc}/5)")
@@ -317,7 +331,7 @@ if submit_button:
                         pdf.alias_nb_pages()
                         pdf.add_page()
                         pdf.add_summary(cat_res, total_score, imps, ctx)
-                        for c_name, d in audit_dict.items():
+                        for c_name, d in final_audit_results.items():
                             pdf.add_category(c_name, d.get('verified_score', 0), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
                         pdf.add_contact_box()
                         st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
