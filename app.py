@@ -114,6 +114,7 @@ class IntegrityPDF(FPDF):
 
     def add_category(self, name, score, critique, question, quote):
         accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
+        status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
         self.set_x(20)
         start_y = self.get_y()
         self.set_fill_color(*accent)
@@ -124,34 +125,34 @@ class IntegrityPDF(FPDF):
         self.cell(120, 12, f" {self.safe_text(name)}", 0, 0, 'L')
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*accent)
-        self.cell(0, 12, f"Score: {score}/5", 0, 1, 'R')
+        self.cell(0, 12, f"Score: {score}/5 | {status}", 0, 1, 'R')
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Critique:", 0, 1)
+        self.set_x(20)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
-        self.set_x(20)
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Dialogue Question:", 0, 1)
+        self.set_x(20)
         self.set_font('helvetica', 'I', 10)
         self.set_text_color(*self.text_color_val)
-        self.set_x(20)
         self.multi_cell(0, 6, self.safe_text(question))
         self.ln(3)
         self.set_x(20)
         self.set_font('helvetica', 'B', 9)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, "Evidence Reference:", 0, 1)
+        self.set_x(20)
         self.set_font('courier', '', 9) 
         self.set_text_color(80, 80, 80)
         self.set_fill_color(250, 250, 250)
         self.set_draw_color(230, 230, 230)
-        self.set_x(20)
         self.multi_cell(0, 5, f"\"{self.safe_text(quote)}\"", 1, 'L', True)
         self.ln(8)
 
@@ -162,7 +163,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, " Strategic Consultancy & Bespoke Support", 0, 1, 'L', True)
-        self.set_fill_color(245, 247, 250)
+        self.set_fill_color(250, 250, 250)
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
@@ -265,38 +266,38 @@ if submit_button:
                     """
                     response = model.generate_content(prompt)
                     res_raw = response.text
-                    json_raw = clean_json_string(res_raw)
+                    json_str = clean_json_string(res_raw)
                     try:
-                        res_json = json.loads(json_raw)
+                        res_json = json.loads(json_str)
                     except:
-                        rep = json_raw.replace('\n', ' ').replace('\\', '\\\\')
+                        rep = json_str.replace('\n', ' ').replace('\\', '\\\\')
                         res_json = json.loads(rep)
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
-                        audit_raw = res_json.get("audit_results", {})
-                        
-                        # RECURSIVE REGEX HARVESTER FOR TOTAL SCORE
+                        # UNIVERSAL NUMERICAL AGGREGATOR
+                        # This avoids key-dependency by harvesting all scores from raw response
                         total_score = 0
-                        # Scans raw response for integers following score-related keys
-                        score_matches = re.findall(r'"(?:score|points|rating|value)"\s*:\s*"?(\d+(?:\.\d+)?)"?', json_raw, re.IGNORECASE)
+                        score_matches = re.findall(r'"(?:score|points|rating|value)"\s*:\s*"?(\d+(?:\.\d+)?)"?', json_str, re.IGNORECASE)
                         if score_matches:
                             total_score = int(sum(float(s) for s in score_matches))
                         
-                        # Handle audit items structure
+                        # Process items for UI display
+                        audit_raw = res_json.get("audit_results", {})
                         audit_items = audit_raw if isinstance(audit_raw, list) else list(audit_raw.values())
 
                         audit_dict = {}
                         for item in audit_items:
-                            # Use regex to harvest score per item for UI rendering
-                            item_str = json.dumps(item)
-                            m_score = re.search(r'"(?:score|points|value)"\s*:\s*"?(\d+(?:\.\d+)?)"?', item_str, re.IGNORECASE)
-                            sc_val = int(float(m_score.group(1))) if m_score else 0
+                            # Local score extraction per category
+                            item_raw = json.dumps(item)
+                            m = re.search(r'"score"\s*:\s*"?(\d+(?:\.\d+)?)"?', item_raw, re.IGNORECASE)
+                            sc_val = int(float(m.group(1))) if m else 0
                             
                             c_name = item.get('category') or item.get('name') or "Category"
                             item['verified_score'] = sc_val
                             audit_dict[c_name] = item
 
+                        # Summary variables
                         ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
                         imps = res_json.get("top_improvements") or res_json.get("improvements") or ["Review findings below"]
                         cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
