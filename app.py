@@ -256,14 +256,13 @@ if submit_button:
             with st.spinner("Running diagnostics."):
                 try:
                     target = discover_model(api_key)
-                    # FROZEN SEED PROTOCOL
+                    # REPEATABILITY VIA ZERO TEMPERATURE AND GREEDY DECODING
                     model = genai.GenerativeModel(
                         target, 
                         generation_config={
                             "temperature": 0.0,
                             "top_p": 0.1,
-                            "top_k": 1,
-                            "seed": 42
+                            "top_k": 1
                         }
                     )
                     
@@ -299,11 +298,9 @@ if submit_button:
                             audit_list = list(raw_audit.values()) if isinstance(raw_audit, dict) else []
 
                         for anchor in cat_anchors:
-                            # Recursive regex search for the score associated with the anchor
                             match = next((item for item in audit_list if isinstance(item, dict) and (anchor.lower() in str(item).lower())), None)
                             
                             if match:
-                                # Numerical extraction from potential string values
                                 item_json = json.dumps(match)
                                 sc_match = re.search(r'"(?:score|points|rating)"\s*:\s*"?(\d+)"?', item_json, re.IGNORECASE)
                                 s_val = int(sc_match.group(1)) if sc_match else 0
