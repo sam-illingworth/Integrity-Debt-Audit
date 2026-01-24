@@ -162,7 +162,7 @@ class IntegrityPDF(FPDF):
         self.set_text_color(255, 255, 255)
         self.set_font('helvetica', 'B', 12)
         self.cell(0, 10, " Strategic Consultancy & Bespoke Support", 0, 1, 'L', True)
-        self.set_fill_color(250, 250, 250)
+        self.set_fill_color(245, 247, 250)
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
@@ -268,8 +268,9 @@ if submit_button:
                     You are Professor Sam Illingworth. Perform a combined triage and audit.
                     STEP 1: Identify assessment with highest weighting.
                     STEP 2: Audit using exactly these 10 categories: {', '.join(cat_anchors)}.
+                    STEP 3: Provide 3 specific, actionable improvements.
                     RULES: Ground in text; lock temp 0.0; return ONLY JSON; escape values.
-                    Format: {{"doc_context": "title", "audit_results": [{{ "category": "name", "score": 1-5, "critique": "text", "question": "text", "quote": "text" }}] }}
+                    Format: {{"doc_context": "title", "top_improvements": ["improvement 1", "improvement 2", "improvement 3"], "audit_results": [{{ "category": "name", "score": 1-5, "critique": "text", "question": "text", "quote": "text" }}] }}
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
