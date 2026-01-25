@@ -22,7 +22,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Professional PDF Class
+# 2. Professional PDF Class - UPDATED FOR ORPHAN PREVENTION
 class IntegrityPDF(FPDF):
     def __init__(self):
         super().__init__()
@@ -65,8 +65,11 @@ class IntegrityPDF(FPDF):
             text_str = text_str.replace(char, replacement)
         return text_str.encode('latin-1', 'replace').decode('latin-1')
 
+    def check_page_break(self, height_needed):
+        if self.get_y() + height_needed > self.page_break_trigger:
+            self.add_page()
+
     def add_summary(self, actual, score, improvements, doc_context):
-        usable_w = 170 
         self.set_x(20)
         self.set_font('helvetica', 'B', 16)
         self.set_text_color(*self.primary_color)
@@ -75,7 +78,7 @@ class IntegrityPDF(FPDF):
         self.set_fill_color(*self.light_grey)
         self.set_draw_color(220, 220, 220)
         box_y = self.get_y()
-        self.rect(20, box_y, usable_w, 45, 'FD')
+        self.rect(20, box_y, 170, 45, 'FD')
         self.set_xy(25, box_y + 5)
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
@@ -113,6 +116,8 @@ class IntegrityPDF(FPDF):
         self.ln(10)
 
     def add_category(self, name, score, critique, question, quote):
+        # Anchor check to prevent orphaned headlines
+        self.check_page_break(60) 
         accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
         status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
         self.set_x(20)
@@ -157,6 +162,7 @@ class IntegrityPDF(FPDF):
         self.ln(8)
 
     def add_contact_box(self):
+        self.check_page_break(40)
         self.ln(10)
         self.set_x(20)
         self.set_fill_color(*self.bg_cream)
@@ -222,9 +228,9 @@ st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs ar
 st.markdown("""
 ### Introduction
 The **Integrity Debt Audit** is a diagnostic tool for Higher Education professionals to evaluate the resilience of their own curriculum. 
-**Important:** This is not AI detection software designed to catch students. It is a reflective instrument to aid curriculum design.
+**Important:** This browser view is a preliminary triage. Please download the formal PDF for the fully detailed evidence report.
 
-For more information and full framework details, visit: [Beyond AI Detection: The Integrity Debt Audit](https://samillingworth.gumroad.com/l/integrity-debt-audit).
+For more information, visit: [Beyond AI Detection: The Integrity Debt Audit](https://samillingworth.gumroad.com/l/integrity-debt-audit).
 """)
 
 c1, c2 = st.columns([2, 1])
@@ -232,61 +238,56 @@ with c1:
     st.markdown("""
     ### Pre-Audit Checklist
     Include the task description, learning outcomes, and submission formats for accurate results.
-    
-    ### How to Use These Results
-    1. **Reflect**: Critically analyse the system generated critiques.
-    2. **Dialogue**: Use the dialogue questions in staff or student representative forums.
-    3. **Redesign**: Focus on categories marked in **Red** (Vulnerable).
     """)
 with c2:
     st.info("**The Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
 
 st.divider()
 
-with st.form("audit_form"):
-    st.subheader("1. Setup")
-    sc1, sc2 = st.columns(2)
-    with sc1: email_user = st.text_input("Your Email (required):")
-    with sc2: expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
-    st.subheader("2. Assessment Input")
-    input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"])
-    uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"]) if input_type == "File Upload" else None
-    raw_input = st.text_area("Paste Content or Public URL:", height=200)
-    submit_button = st.form_submit_button("Generate Diagnostic Report")
+# Session State for Modal/Overlay View
+if 'audit_complete' not in st.session_state:
+    st.session_state.audit_complete = False
+
+with st.container():
+    if not st.session_state.audit_complete:
+        with st.form("audit_form"):
+            st.subheader("1. Setup")
+            sc1, sc2 = st.columns(2)
+            with sc1: email_user = st.text_input("Your Email (required):")
+            with sc2: expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
+            st.subheader("2. Assessment Input")
+            input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"])
+            uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"]) if input_type == "File Upload" else None
+            raw_input = st.text_area("Paste Content or Public URL:", height=200)
+            submit_button = st.form_submit_button("Generate Diagnostic Report")
+    else:
+        if st.button("Audit New Brief"):
+            st.session_state.audit_complete = False
+            st.rerun()
 
 # 5. Logic
 api_key = st.secrets.get("GEMINI_API_KEY")
-if submit_button:
+if not st.session_state.audit_complete and 'submit_button' in locals() and submit_button:
     if not api_key or not email_user: st.error("Email and Secrets configuration required.")
     else:
         final_text = extract_text(uploaded_file) if input_type == "File Upload" and uploaded_file else (scrape_url(raw_input) if raw_input.startswith("http") else raw_input)
         if not final_text: st.error("No assessment content provided.")
         else:
-            with st.spinner("Running diagnostics."):
+            with st.spinner("Refining Diagnostic Framework..."):
                 try:
                     target = discover_model(api_key)
                     model = genai.GenerativeModel(
                         target, 
-                        generation_config={
-                            "temperature": 0.0,
-                            "top_p": 0.1,
-                            "top_k": 1
-                        }
+                        generation_config={"temperature": 0.0, "top_p": 0.1, "top_k": 1}
                     )
                     
-                    cat_anchors = [
-                        "Conceptual Friction", "Environmental Logic", "Software Dependency",
-                        "Process Transparency", "Contextual Binding", "Reflective Depth",
-                        "Data Sovereignty", "Creative Divergence", "Technical Defence", "Ethical Agency"
-                    ]
+                    cat_anchors = ["Conceptual Friction", "Environmental Logic", "Software Dependency", "Process Transparency", "Contextual Binding", "Reflective Depth", "Data Sovereignty", "Creative Divergence", "Technical Defence", "Ethical Agency"]
                     
                     prompt = f"""
-                    You are Professor Sam Illingworth. Perform a combined triage and audit.
-                    STEP 1: Identify assessment with highest weighting.
-                    STEP 2: Audit using exactly these 10 categories: {', '.join(cat_anchors)}.
-                    STEP 3: Provide 3 specific, actionable improvements.
-                    RULES: Ground in text; lock temp 0.0; return ONLY JSON; escape values.
-                    Format: {{"doc_context": "title", "top_improvements": ["improvement 1", "improvement 2", "improvement 3"], "audit_results": [{{ "category": "name", "score": 1-5, "critique": "text", "question": "text", "quote": "text" }}] }}
+                    You are Professor Sam Illingworth. Perform a triage and audit.
+                    Audit using exactly: {', '.join(cat_anchors)}.
+                    RULES: return ONLY JSON; escape values.
+                    Format: {{"doc_context": "title", "top_improvements": ["1", "2", "3"], "audit_results": [{{ "category": "name", "score": 1-5, "critique": "text", "question": "text", "quote": "text" }}] }}
                     Text: {final_text[:8000]}
                     """
                     response = model.generate_content(prompt)
@@ -295,52 +296,55 @@ if submit_button:
                     
                     if res_json.get("status") == "error": st.error("No task identified.")
                     else:
-                        total_score = 0
-                        final_audit_results = {}
-                        
-                        raw_audit = res_json.get("audit_results", res_json)
-                        if isinstance(raw_audit, list):
-                            audit_list = raw_audit
-                        else:
-                            audit_list = list(raw_audit.values()) if isinstance(raw_audit, dict) else []
-
-                        for anchor in cat_anchors:
-                            match = next((item for item in audit_list if isinstance(item, dict) and (anchor.lower() in str(item).lower())), None)
-                            
-                            if match:
-                                item_json = json.dumps(match)
-                                sc_match = re.search(r'"(?:score|points|rating)"\s*:\s*"?(\d+)"?', item_json, re.IGNORECASE)
-                                s_val = int(sc_match.group(1)) if sc_match else 0
-                                total_score += s_val
-                                final_audit_results[anchor] = match
-                                final_audit_results[anchor]['verified_score'] = s_val
-                            else:
-                                final_audit_results[anchor] = {
-                                    "critique": "Data extraction failure.",
-                                    "verified_score": 0, "question": "N/A", "quote": "N/A"
-                                }
-
-                        ctx = res_json.get("doc_context") or res_json.get("task_title") or "Assessment Audit"
-                        imps = res_json.get("top_improvements") or ["Review individual categories."]
-                        cat_res = "Low" if total_score >= 40 else "Medium" if total_score >= 25 else "High"
-                        
-                        st.divider()
-                        st.info(f"**Diagnostic Focus:** {ctx}")
-                        st.subheader(f"Total Integrity Score: {total_score}/50")
-                        
-                        for c_name, d in final_audit_results.items():
-                            sc = d.get('verified_score', 0)
-                            if sc == 5: st.success(f"🟢 {c_name} ({sc}/5)")
-                            elif sc >= 3: st.warning(f"🟡 {c_name} ({sc}/5)")
-                            else: st.error(f"🔴 {c_name} ({sc}/5)")
-                            st.write(d.get('critique', 'N/A'))
-                        
-                        pdf = IntegrityPDF()
-                        pdf.alias_nb_pages()
-                        pdf.add_page()
-                        pdf.add_summary(cat_res, total_score, imps, ctx)
-                        for c_name, d in final_audit_results.items():
-                            pdf.add_category(c_name, d.get('verified_score', 0), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
-                        pdf.add_contact_box()
-                        st.download_button("Download PDF Report", data=bytes(pdf.output()), file_name="Integrity_Audit.pdf")
+                        st.session_state.res_json = res_json
+                        st.session_state.audit_complete = True
+                        st.rerun()
                 except Exception as e: st.error(f"Audit failed: {e}")
+
+if st.session_state.audit_complete:
+    res_json = st.session_state.res_json
+    cat_anchors = ["Conceptual Friction", "Environmental Logic", "Software Dependency", "Process Transparency", "Contextual Binding", "Reflective Depth", "Data Sovereignty", "Creative Divergence", "Technical Defence", "Ethical Agency"]
+    
+    total_score = 0
+    final_audit_results = {}
+    audit_list = res_json.get("audit_results", [])
+    if not isinstance(audit_list, list): audit_list = list(audit_list.values())
+
+    for anchor in cat_anchors:
+        match = next((item for item in audit_list if isinstance(item, dict) and (anchor.lower() in str(item).lower())), None)
+        if match:
+            item_json = json.dumps(match)
+            sc_match = re.search(r'"(?:score|points|rating)"\s*:\s*"?(\d+)"?', item_json, re.IGNORECASE)
+            s_val = int(sc_match.group(1)) if sc_match else 0
+            total_score += s_val
+            final_audit_results[anchor] = match
+            final_audit_results[anchor]['verified_score'] = s_val
+        else:
+            final_audit_results[anchor] = {"critique": "Data extraction failure.", "verified_score": 0, "question": "N/A", "quote": "N/A"}
+
+    ctx = res_json.get("doc_context") or "Assessment Audit"
+    imps = res_json.get("top_improvements") or ["Review individual categories."]
+    
+    st.subheader(f"Diagnostic Focus: {ctx}")
+    st.markdown(f"**Integrity Score: {total_score}/50**")
+    st.caption("⚠️ Note: Formal PDF contains full detailed report; this view is a summary.")
+    
+    # Download Button at Top for UX
+    pdf = IntegrityPDF()
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.add_summary("Medium" if total_score < 40 else "Low", total_score, imps, ctx)
+    for c_name, d in final_audit_results.items():
+        pdf.add_category(c_name, d.get('verified_score', 0), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
+    pdf.add_contact_box()
+    st.download_button("Download Full Evidence Report (PDF)", data=bytes(pdf.output()), file_name="Integrity_Debt_Audit.pdf")
+
+    st.divider()
+    for c_name, d in final_audit_results.items():
+        sc = d.get('verified_score', 0)
+        label = "🟢" if sc == 5 else "🟡" if sc >= 3 else "🔴"
+        st.write(f"{label} **{c_name} ({sc}/5)**")
+        st.write(d.get('critique', 'N/A'))
+    
+    st.divider()
+    st.caption("End of summary. For pedagogical rationale and evidence quotes, please download the PDF report.")
