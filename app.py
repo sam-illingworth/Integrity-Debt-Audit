@@ -481,7 +481,7 @@ if not st.session_state.audit_complete and 'submit_button' in locals() and submi
                     target = discover_model(api_key)
                     model = genai.GenerativeModel(
                         target, 
-                        generation_config={"temperature": 0.0, "top_p": 0.1, "top_k": 1}
+                        generation_config={"temperature": 0.1, "top_p": 0.2, "top_k": 2}
                     )
                     
                     # Build category descriptions for prompt
@@ -495,9 +495,9 @@ CRITICAL INSTRUCTIONS:
 
 2. For each category, provide:
    - A score from 1-5 (where 1 = easily automated/vulnerable, 5 = resilient/Slow AI)
-   - A critique explaining why you gave this score
-   - A dialogue question to help the educator reflect
-   - A direct quote from the assessment that supports your score
+   - A critique explaining why you gave this score (keep under 150 words)
+   - A dialogue question to help the educator reflect (one sentence)
+   - A direct quote from the assessment that supports your score (under 50 words)
 
 3. Your response MUST be valid JSON with this exact structure:
 {{
@@ -515,17 +515,24 @@ CRITICAL INSTRUCTIONS:
     ]
 }}
 
-4. IMPORTANT: 
+4. JSON FORMATTING RULES:
+   - NO trailing commas before closing braces or brackets
+   - Escape ALL quotes within strings using backslash: \\"
+   - Keep critique and quote fields SHORT to avoid JSON issues
+   - Do NOT include line breaks within string values
+   - Use only standard ASCII quotes, not smart quotes
+
+5. IMPORTANT: 
    - Use ONLY the category names listed above
    - Provide exactly 10 results, one for each category
    - Scores must be integers from 1-5
    - Use British English spellings (organise not organize, emphasise not emphasize, etc.)
    - If information is missing for a category, estimate based on typical practices and note this in the critique
 
-Assessment text to analyse:
+Assessment text to analyse (truncated to first 8000 characters):
 {final_text[:8000]}
 
-Return ONLY valid JSON with no additional text or markdown formatting."""
+Return ONLY valid JSON with no additional text, markdown formatting, or preamble."""
 
                     response = model.generate_content(prompt)
                     res_raw = clean_json_string(response.text)
@@ -533,9 +540,23 @@ Return ONLY valid JSON with no additional text or markdown formatting."""
                     try:
                         res_json = json.loads(res_raw)
                     except json.JSONDecodeError as e:
-                        st.error(f"Failed to parse AI response as JSON. Error: {e}")
-                        st.code(res_raw)
-                        st.stop()
+                        # Try to fix common JSON issues
+                        try:
+                            # Remove trailing commas before closing braces/brackets
+                            fixed_json = re.sub(r',\s*}', '}', res_raw)
+                            fixed_json = re.sub(r',\s*]', ']', fixed_json)
+                            # Escape unescaped quotes in strings
+                            res_json = json.loads(fixed_json)
+                        except json.JSONDecodeError:
+                            st.error(f"The AI response could not be parsed. This sometimes happens with very long assessments. Please try:")
+                            st.markdown("""
+                            - Shortening your assessment text slightly
+                            - Removing any special characters or unusual formatting
+                            - Trying again (the AI may succeed on second attempt)
+                            """)
+                            with st.expander("Show AI Response (for debugging)"):
+                                st.code(res_raw)
+                            st.stop()
                     
                     # Validate response structure
                     if not isinstance(res_json, dict):
