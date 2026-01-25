@@ -15,38 +15,74 @@ st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", l
 
 st.markdown("""
     <style>
-    .stApp { background-color: white; color: black; }
+    .stApp { 
+        background-color: white; 
+        color: black; 
+    }
     header {visibility: hidden;}
     .reportview-container { background: white; }
     p, span, h1, h2, h3, h4, li { color: black !important; }
     
-    /* Fix input boxes - make them visible with light background */
-    input[type="text"], input[type="email"], textarea {
-        background-color: #f8f9fa !important;
-        border: 1px solid #ced4da !important;
-        color: #212529 !important;
-        padding: 8px 12px !important;
+    /* Fix all input elements */
+    .stTextInput > div > div > input {
+        background-color: white !important;
+        border: 2px solid #d0d0d0 !important;
+        color: black !important;
     }
     
-    /* Fix select boxes */
-    select {
-        background-color: #f8f9fa !important;
-        border: 1px solid #ced4da !important;
-        color: #212529 !important;
+    /* Fix select/dropdown boxes */
+    .stSelectbox > div > div > div {
+        background-color: white !important;
+        color: black !important;
+    }
+    
+    .stSelectbox [data-baseweb="select"] {
+        background-color: white !important;
+    }
+    
+    .stSelectbox [data-baseweb="select"] > div {
+        background-color: white !important;
+        border: 2px solid #d0d0d0 !important;
     }
     
     /* Fix file uploader */
-    .stFileUploader {
-        background-color: #f8f9fa !important;
-        border: 1px solid #ced4da !important;
-        padding: 10px !important;
+    [data-testid="stFileUploader"] {
+        background-color: white !important;
+        border: 2px dashed #d0d0d0 !important;
+    }
+    
+    [data-testid="stFileUploader"] section {
+        background-color: white !important;
+        border: none !important;
     }
     
     /* Fix text area */
     .stTextArea textarea {
-        background-color: #f8f9fa !important;
-        border: 1px solid #ced4da !important;
-        color: #212529 !important;
+        background-color: white !important;
+        border: 2px solid #d0d0d0 !important;
+        color: black !important;
+    }
+    
+    /* Fix buttons */
+    .stButton > button {
+        background-color: #2D4D4A !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #1a2e2c !important;
+    }
+    
+    /* Fix form submit button */
+    .stFormSubmitButton > button {
+        background-color: #2D4D4A !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -318,12 +354,44 @@ st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
 
 st.markdown("""
-### Introduction
-The **Integrity Debt Audit** is a diagnostic tool for Higher Education professionals to evaluate the resilience of their own curriculum. 
-**Important:** This browser view is a preliminary triage. Please download the formal PDF for the fully detailed evidence report.
+### What is this tool?
 
-For more information, visit: [Beyond AI Detection: The Integrity Debt Audit](https://samillingworth.gumroad.com/l/integrity-debt-audit).
+The **Integrity Debt Audit** helps you identify if your assessments can be easily automated by AI. Many traditional assignments—essays, reports, literature reviews—are now vulnerable to being completed by AI in minutes rather than through genuine student learning. This creates what I call **Integrity Debt**: the gap between what you think you're assessing and what students can now automate.
+
+This diagnostic evaluates your assessment brief across **10 evidence-based categories** that distinguish human learning from AI automation. Each category is scored from 1 (resilient to AI) to 5 (easily automated), giving you a total vulnerability score out of 50.
+
+### Why use this audit?
+
+- **Stop chasing ghosts with AI detectors** — They don't work reliably, and students know how to evade them
+- **Fix the curriculum, not the students** — High scores indicate structural problems with assessment design, not moral failures
+- **Protect institutional reputation** — Awarding degrees for AI-generated work threatens the value of your qualifications
+- **Design AI-resilient assessments** — Get specific, actionable feedback on how to rebuild assessment integrity
+
+### Important: This is a screening tool
+
+**The browser view provides a preliminary triage only.** For the full diagnostic value, you must download the PDF report, which includes:
+- Detailed evidence quotes from your assessment that justify each score
+- Pedagogical critiques explaining *why* each category scored as it did  
+- Reflective questions to guide curriculum redesign conversations
+- Strategic recommendations prioritized by impact
+
+Think of this screen as a medical triage; the PDF is the full diagnostic report you'd discuss with colleagues.
+
+### Want the complete framework?
+
+For a deep dive into the methodology, practical examples, and a curriculum redesign template, download the full strategy guide: 
+**[Beyond AI Detection: The Integrity Debt Audit](https://samillingworth.gumroad.com/l/integrity-debt-audit)**
+
+This guide includes:
+- The theoretical foundation of each category with research citations
+- Before/after assessment examples from multiple disciplines  
+- A syllabus template for communicating your approach to students
+- Guidance on implementing Slow AI principles across your curriculum
+
+If your institution needs support interpreting results or redesigning high-stakes assessments, I offer bespoke consultancy: **[sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com)**
 """)
+
+st.divider()
 
 c1, c2 = st.columns([2, 1])
 with c1:
