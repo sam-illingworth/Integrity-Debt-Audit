@@ -29,9 +29,9 @@ Each category is scored from 1 (Slow AI/Resilient) to 5 (Fast AI/Vulnerable), wi
 
 ## Scoring Interpretation
 
-- **10–20: Pedagogical Sovereignty** — Your assessment prioritizes human agency and is resilient to AI automation.
-- **21–35: Structural Drift** — Your assessment has integrity debt that may lead to shallow learning and automation risk.
-- **36–50: Critical Integrity Failure** — Your assessment is currently highly vulnerable to AI automation.
+- **10–20: Pedagogical Sovereignty** – Your assessment prioritises human agency and is resilient to AI automation.
+- **21–35: Structural Drift** – Your assessment has integrity debt that may lead to shallow learning and automation risk.
+- **36–50: Critical Integrity Failure** – Your assessment is currently highly vulnerable to AI automation.
 
 ## Technical Configuration
 

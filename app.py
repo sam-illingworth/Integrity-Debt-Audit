@@ -364,16 +364,16 @@ st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs ar
 st.markdown("""
 ### What is this tool?
 
-The **Integrity Debt Audit** helps you identify if your assessments can be easily automated by AI. Many traditional assignments—essays, reports, literature reviews—are now vulnerable to being completed by AI in minutes rather than through genuine student learning. This creates what I call **Integrity Debt**: the gap between what you think you're assessing and what students can now automate.
+The **Integrity Debt Audit** helps you identify if your assessments can be easily automated by AI. Many traditional assignments (essays, reports, literature reviews) are now vulnerable to being completed by AI in minutes rather than through genuine student learning. This creates what I call **Integrity Debt**: the gap between what you think you're assessing and what students can now automate.
 
 This diagnostic evaluates your assessment brief across **10 evidence-based categories** that distinguish human learning from AI automation. Each category is scored from 1 (easily automated) to 5 (resilient to AI), giving you a total integrity score out of 50.
 
 ### Why use this audit?
 
-- **Stop chasing ghosts with AI detectors** — They don't work reliably, and students know how to evade them
-- **Fix the curriculum, not the students** — High scores indicate structural problems with assessment design, not moral failures
-- **Protect institutional reputation** — Awarding degrees for AI-generated work threatens the value of your qualifications
-- **Design AI-resilient assessments** — Get specific, actionable feedback on how to rebuild assessment integrity
+- **Stop chasing ghosts with AI detectors** – They don't work reliably, and students know how to evade them
+- **Fix the curriculum, not the students** – High scores indicate structural problems with assessment design, not moral failures
+- **Protect institutional reputation** – Awarding degrees for AI-generated work threatens the value of your qualifications
+- **Design AI-resilient assessments** – Get specific, actionable feedback on how to rebuild assessment integrity
 
 ### Important: This is a screening tool
 
@@ -381,7 +381,7 @@ This diagnostic evaluates your assessment brief across **10 evidence-based categ
 - Detailed evidence quotes from your assessment that justify each score
 - Pedagogical critiques explaining *why* each category scored as it did  
 - Reflective questions to guide curriculum redesign conversations
-- Strategic recommendations prioritized by impact
+- Strategic recommendations prioritised by impact
 
 Think of this screen as a medical triage; the PDF is the full diagnostic report you'd discuss with colleagues.
 
@@ -418,6 +418,10 @@ if 'audit_complete' not in st.session_state:
 
 with st.container():
     if not st.session_state.audit_complete:
+        # Move input type selector OUTSIDE the form so it updates immediately
+        st.subheader("2. Assessment Input")
+        input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"])
+        
         with st.form("audit_form"):
             st.subheader("1. Setup")
             sc1, sc2 = st.columns(2)
@@ -426,8 +430,7 @@ with st.container():
             with sc2: 
                 expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
             
-            st.subheader("2. Assessment Input")
-            input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"])
+            st.markdown("---")  # Visual separator
             
             uploaded_file = None
             raw_input = ""
@@ -487,7 +490,7 @@ if not st.session_state.audit_complete and 'submit_button' in locals() and submi
                     prompt = f"""You are Professor Sam Illingworth conducting an Integrity Debt Audit for a Higher Education assessment.
 
 CRITICAL INSTRUCTIONS:
-1. Analyze the assessment brief against EXACTLY these 10 categories in this exact order:
+1. Analyse the assessment brief against EXACTLY these 10 categories in this exact order:
 {category_info}
 
 2. For each category, provide:
@@ -516,9 +519,10 @@ CRITICAL INSTRUCTIONS:
    - Use ONLY the category names listed above
    - Provide exactly 10 results, one for each category
    - Scores must be integers from 1-5
+   - Use British English spellings (organise not organize, emphasise not emphasize, etc.)
    - If information is missing for a category, estimate based on typical practices and note this in the critique
 
-Assessment text to analyze:
+Assessment text to analyse:
 {final_text[:8000]}
 
 Return ONLY valid JSON with no additional text or markdown formatting."""
