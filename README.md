@@ -1,6 +1,6 @@
 # Integrity Debt Audit
 
-**"If a machine can pass your assessment, the failure lies in the curriculum design, not the student’s character."**
+**"If a machine can pass your assessment, the failure lies in the curriculum design, not the student's character."**
 
 [**Try the Audit Tool**](https://integrity-debt-audit.streamlit.app/) | [**Download the Strategy Guide**](https://samillingworth.gumroad.com/l/integrity-debt-audit) | [**Contact for Consultancy**](mailto:sam.illingworth@gmail.com)
 
@@ -14,16 +14,24 @@ The **Integrity Debt Audit** is an AI-powered tool for Higher Education professi
 
 The audit evaluates uploaded documents (PDF/DOCX) across ten critical dimensions:
 
-1.  **Weighting**: Proportion of credit relative to effort.
-2.  **Documentation**: Explicitness of academic integrity requirements.
-3.  **Context**: Connection to non-generative local contexts.
-4.  **Reflection**: Requirement for subjective, personal insight.
-5.  **Time**: Realism of completion timelines.
-6.  **Multimodal**: Requirement for non-textual outputs.
-7.  **Interrogation**: Ability for the student to defend the logic.
-8.  **Defence**: Presence of an oral or live component.
-9.  **Collaborative**: Requirement for social interdependence.
-10. **Recency**: Reliance on contemporary events (last 24 hours).
+1.  **Final product weighting**: Proportion of credit distributed across formative vs. summative stages.
+2.  **Iterative documentation**: Requirement for evidence of the messy middle of learning (drafts, rejected ideas, process logs).
+3.  **Contextual specificity**: Connection to specific local, temporal, or classroom contexts that AI cannot access.
+4.  **Reflective criticality**: Requirement for deep, subjective personal synthesis rather than generic reflection.
+5.  **Temporal friction**: Time-based constraints that make rapid completion physically impossible.
+6.  **Multimodal evidence**: Requirement for non-textual outputs (audio, physical artifacts, hand-drawn elements).
+7.  **Explicit AI interrogation**: Requirement for students to critique or analyze AI-generated outputs.
+8.  **Real-time defence**: Presence of live interaction (viva, presentation, unscripted Q&A).
+9.  **Social and collaborative labour**: Requirement for verified group work and peer accountability.
+10. **Data recency**: Reliance on events, datasets, or information from the last fortnight to two weeks.
+
+Each category is scored from 1 (Slow AI/Resilient) to 5 (Fast AI/Vulnerable), with a total possible score of 50.
+
+## Scoring Interpretation
+
+- **10–20: Pedagogical Sovereignty** — Your assessment prioritizes human agency and is resilient to AI automation.
+- **21–35: Structural Drift** — Your assessment has integrity debt that may lead to shallow learning and automation risk.
+- **36–50: Critical Integrity Failure** — Your assessment is currently highly vulnerable to AI automation.
 
 ## Technical Configuration
 
