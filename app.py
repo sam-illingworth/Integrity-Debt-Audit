@@ -15,10 +15,75 @@ st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", l
 
 st.markdown("""
     <style>
-    .stApp { background-color: white; color: black; }
+    .stApp { 
+        background-color: white; 
+        color: black; 
+    }
     header {visibility: hidden;}
     .reportview-container { background: white; }
     p, span, h1, h2, h3, h4, li { color: black !important; }
+    
+    /* Fix all input elements */
+    .stTextInput > div > div > input {
+        background-color: white !important;
+        border: 2px solid #d0d0d0 !important;
+        color: black !important;
+    }
+    
+    /* Fix select/dropdown boxes */
+    .stSelectbox > div > div > div {
+        background-color: white !important;
+        color: black !important;
+    }
+    
+    .stSelectbox [data-baseweb="select"] {
+        background-color: white !important;
+    }
+    
+    .stSelectbox [data-baseweb="select"] > div {
+        background-color: white !important;
+        border: 2px solid #d0d0d0 !important;
+    }
+    
+    /* Fix file uploader */
+    [data-testid="stFileUploader"] {
+        background-color: white !important;
+        border: 2px dashed #d0d0d0 !important;
+    }
+    
+    [data-testid="stFileUploader"] section {
+        background-color: white !important;
+        border: none !important;
+    }
+    
+    /* Fix text area */
+    .stTextArea textarea {
+        background-color: white !important;
+        border: 2px solid #d0d0d0 !important;
+        color: black !important;
+    }
+    
+    /* Fix buttons */
+    .stButton > button {
+        background-color: #2D4D4A !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #1a2e2c !important;
+    }
+    
+    /* Fix form submit button */
+    .stFormSubmitButton > button {
+        background-color: #2D4D4A !important;
+        color: white !important;
+        border: none !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -90,6 +155,7 @@ class IntegrityPDF(FPDF):
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
         self.cell(35, 8, "Integrity Score:", 0, 0)
+        # HIGH score (40-50) = GOOD (green), LOW (10-20) = BAD (red)
         sc_col = self.success if score >= 40 else self.warning if score >= 25 else self.danger
         self.set_font('helvetica', 'B', 14)
         self.set_text_color(*sc_col)
@@ -118,8 +184,9 @@ class IntegrityPDF(FPDF):
     def add_category(self, name, score, critique, question, quote):
         # Anchor check to prevent orphaned headlines
         self.check_page_break(60) 
-        accent = self.success if score == 5 else self.warning if score >= 3 else self.danger
-        status = "RESILIENT" if score == 5 else "MODERATE" if score >= 3 else "VULNERABLE"
+        # HIGH scores (4-5) are GOOD (green), LOW (1-2) are BAD (red)
+        accent = self.success if score >= 4 else self.warning if score == 3 else self.danger
+        status = "RESILIENT" if score >= 4 else "MODERATE" if score == 3 else "VULNERABLE"
         self.set_x(20)
         start_y = self.get_y()
         self.set_fill_color(*accent)
@@ -272,16 +339,16 @@ INTEGRITY_CATEGORIES = [
 
 # Category descriptions for the AI prompt
 CATEGORY_DESCRIPTIONS = {
-    "Final product weighting": "Does the assessment reward the learning process over the final product? Score 1 (multiple formative stages) to 5 (single end-of-term submission).",
-    "Iterative documentation": "Does the assessment require evidence of the messy middle of learning? Score 1 (mandatory brain-dumps, mind maps, rejected ideas) to 5 (polished PDF only).",
-    "Contextual specificity": "Is the assessment tied to specific local/classroom contexts that AI cannot access? Score 1 (unique in-class discussions) to 5 (broad theoretical questions).",
-    "Reflective criticality": "Does the assessment require deep personal synthesis? Score 1 (narrative on emotional reactions) to 5 (generic professional reflection).",
-    "Temporal friction": "Is it physically impossible to complete quickly? Score 1 (longitudinal study over weeks) to 5 (can be done in one night).",
-    "Multimodal evidence": "Does the assessment require non-text outputs? Score 1 (audio, physical models, hand-drawn) to 5 (standard Word document).",
-    "Explicit AI interrogation": "Does the assessment require students to critique AI outputs? Score 1 (generate and critique AI drafts) to 5 (AI ignored or banned).",
-    "Real-time defence": "Does the assessment include live interaction? Score 1 (mandatory viva with Q&A) to 5 (entirely asynchronous).",
-    "Social and collaborative labour": "Does the assessment require verified group work? Score 1 (observed collaboration with peer review) to 5 (entirely solitary work).",
-    "Data recency": "Does the assessment engage with very recent events/data? Score 1 (last fortnight) to 5 (static concepts from decades ago)."
+    "Final product weighting": "Does the assessment reward the learning process over the final product? Score 1 (single end-of-term submission) to 5 (multiple formative stages).",
+    "Iterative documentation": "Does the assessment require evidence of the messy middle of learning? Score 1 (polished PDF only) to 5 (mandatory brain-dumps, mind maps, rejected ideas).",
+    "Contextual specificity": "Is the assessment tied to specific local/classroom contexts that AI cannot access? Score 1 (broad theoretical questions) to 5 (unique in-class discussions).",
+    "Reflective criticality": "Does the assessment require deep personal synthesis? Score 1 (generic professional reflection) to 5 (narrative on emotional reactions).",
+    "Temporal friction": "Is it physically impossible to complete quickly? Score 1 (can be done in one night) to 5 (longitudinal study over weeks).",
+    "Multimodal evidence": "Does the assessment require non-text outputs? Score 1 (standard Word document) to 5 (audio, physical models, hand-drawn).",
+    "Explicit AI interrogation": "Does the assessment require students to critique AI outputs? Score 1 (AI ignored or banned) to 5 (generate and critique AI drafts).",
+    "Real-time defence": "Does the assessment include live interaction? Score 1 (entirely asynchronous) to 5 (mandatory viva with Q&A).",
+    "Social and collaborative labour": "Does the assessment require verified group work? Score 1 (entirely solitary work) to 5 (observed collaboration with peer review).",
+    "Data recency": "Does the assessment engage with very recent events/data? Score 1 (static concepts from decades ago) to 5 (last fortnight)."
 }
 
 # 4. Interface
@@ -289,12 +356,44 @@ st.title("Integrity Debt Diagnostic")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
 
 st.markdown("""
-### Introduction
-The **Integrity Debt Audit** is a diagnostic tool for Higher Education professionals to evaluate the resilience of their own curriculum. 
-**Important:** This browser view is a preliminary triage. Please download the formal PDF for the fully detailed evidence report.
+### What is this tool?
 
-For more information, visit: [Beyond AI Detection: The Integrity Debt Audit](https://samillingworth.gumroad.com/l/integrity-debt-audit).
+The **Integrity Debt Audit** helps you identify if your assessments can be easily automated by AI. Many traditional assignments—essays, reports, literature reviews—are now vulnerable to being completed by AI in minutes rather than through genuine student learning. This creates what I call **Integrity Debt**: the gap between what you think you're assessing and what students can now automate.
+
+This diagnostic evaluates your assessment brief across **10 evidence-based categories** that distinguish human learning from AI automation. Each category is scored from 1 (easily automated) to 5 (resilient to AI), giving you a total integrity score out of 50.
+
+### Why use this audit?
+
+- **Stop chasing ghosts with AI detectors** — They don't work reliably, and students know how to evade them
+- **Fix the curriculum, not the students** — High scores indicate structural problems with assessment design, not moral failures
+- **Protect institutional reputation** — Awarding degrees for AI-generated work threatens the value of your qualifications
+- **Design AI-resilient assessments** — Get specific, actionable feedback on how to rebuild assessment integrity
+
+### Important: This is a screening tool
+
+**The browser view provides a preliminary triage only.** For the full diagnostic value, you must download the PDF report, which includes:
+- Detailed evidence quotes from your assessment that justify each score
+- Pedagogical critiques explaining *why* each category scored as it did  
+- Reflective questions to guide curriculum redesign conversations
+- Strategic recommendations prioritized by impact
+
+Think of this screen as a medical triage; the PDF is the full diagnostic report you'd discuss with colleagues.
+
+### Want the complete framework?
+
+For a deep dive into the methodology, practical examples, and a curriculum redesign template, download the full strategy guide: 
+**[Beyond AI Detection: The Integrity Debt Audit](https://samillingworth.gumroad.com/l/integrity-debt-audit)**
+
+This guide includes:
+- The theoretical foundation of each category with research citations
+- Before/after assessment examples from multiple disciplines  
+- A syllabus template for communicating your approach to students
+- Guidance on implementing Slow AI principles across your curriculum
+
+If your institution needs support interpreting results or redesigning high-stakes assessments, I offer bespoke consultancy: **[sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com)**
 """)
+
+st.divider()
 
 c1, c2 = st.columns([2, 1])
 with c1:
@@ -303,7 +402,7 @@ with c1:
     Include the task description, learning outcomes, and submission formats for accurate results.
     """)
 with c2:
-    st.info("**The Scoring System**\n* 🟢 5: Resilient (Slow AI)\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable (Fast AI)")
+    st.info("**The Scoring System**\n* 🟢 4-5: Resilient\n* 🟡 3: Moderate\n* 🔴 1-2: Vulnerable")
 
 st.divider()
 
@@ -330,7 +429,7 @@ with st.container():
             if input_type == "File Upload":
                 uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"])
             else:
-                raw_input = st.text_area("Paste Content or Public URL:", height=200)
+                raw_input = st.text_area("Paste Content or Public URL:", height=200, key="paste_input")
             
             submit_button = st.form_submit_button("Generate Diagnostic Report")
     else:
@@ -386,7 +485,7 @@ CRITICAL INSTRUCTIONS:
 {category_info}
 
 2. For each category, provide:
-   - A score from 1-5 (where 1 = Slow AI/Resilient, 5 = Fast AI/Vulnerable)
+   - A score from 1-5 (where 1 = easily automated/vulnerable, 5 = resilient/Slow AI)
    - A critique explaining why you gave this score
    - A dialogue question to help the educator reflect
    - A direct quote from the assessment that supports your score
@@ -518,25 +617,55 @@ if st.session_state.audit_complete:
     if not isinstance(imps, list):
         imps = [str(imps)]
     
-    # Calculate susceptibility level
-    if total_score <= 20:
+    # Calculate susceptibility level - HIGH scores (40-50) are GOOD
+    if total_score >= 40:
         susceptibility = "Low (Pedagogical Sovereignty)"
-    elif total_score <= 35:
+    elif total_score >= 25:
         susceptibility = "Medium (Structural Drift)"
     else:
         susceptibility = "High (Critical Integrity Failure)"
     
     # Display summary
+    st.markdown("""
+        <style>
+        /* Make results section text visible */
+        h2, h3 {
+            color: #2D4D4A !important;
+        }
+        [data-testid="stMetricValue"] {
+            color: #2D4D4A !important;
+            font-size: 2rem !important;
+            font-weight: bold !important;
+        }
+        [data-testid="stMetricLabel"] {
+            color: #2D4D4A !important;
+            font-weight: 600 !important;
+        }
+        [data-testid="stExpander"] {
+            background-color: #f8f9fa !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        [data-testid="stExpander"] p {
+            color: #212529 !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     st.subheader(f"Diagnostic Focus: {ctx}")
     
     col1, col2 = st.columns(2)
     with col1:
-        score_color = "🟢" if total_score <= 20 else "🟡" if total_score <= 35 else "🔴"
-        st.metric("Integrity Score", f"{total_score}/50", delta=score_color)
+        # HIGH total score (40-50) = GOOD (green), LOW (10-20) = BAD (red)
+        score_color = "🟢" if total_score >= 40 else "🟡" if total_score >= 25 else "🔴"
+        st.metric("Integrity Score", f"{score_color} {total_score}/50")
     with col2:
         st.metric("AI Susceptibility", susceptibility.split('(')[0].strip())
     
-    st.caption("⚠️ Note: Formal PDF contains full detailed report; this view is a summary.")
+    st.markdown("""
+        <p style='color: #856404; background-color: #fff3cd; padding: 12px; border-radius: 4px; border-left: 4px solid #ffc107;'>
+        ⚠️ <strong>Note:</strong> Formal PDF contains full detailed report; this view is a summary.
+        </p>
+    """, unsafe_allow_html=True)
     
     # Generate PDF
     pdf = IntegrityPDF()
@@ -555,7 +684,27 @@ if st.session_state.audit_complete:
     
     pdf.add_contact_box()
     
-    # Download button
+    # Download button with custom styling
+    st.markdown("""
+        <style>
+        .stDownloadButton > button {
+            background-color: #2D4D4A !important;
+            color: white !important;
+            border: none !important;
+            padding: 16px 32px !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+            border-radius: 8px !important;
+            width: 100% !important;
+            margin: 20px 0 !important;
+        }
+        .stDownloadButton > button:hover {
+            background-color: #1a2e2c !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     st.download_button(
         "📥 Download Full Evidence Report (PDF)", 
         data=bytes(pdf.output()), 
@@ -570,7 +719,9 @@ if st.session_state.audit_complete:
     
     for cat_name, data in final_audit_results.items():
         score = data['verified_score']
-        label = "🟢" if score <= 2 else "🟡" if score <= 3 else "🔴"
+        # HIGH scores (4-5) are GOOD (resilient) = GREEN
+        # LOW scores (1-2) are BAD (vulnerable) = RED
+        label = "🟢" if score >= 4 else "🟡" if score == 3 else "🔴"
         
         with st.expander(f"{label} **{cat_name}** ({score}/5)"):
             st.markdown(f"**Critique:** {data['critique']}")
