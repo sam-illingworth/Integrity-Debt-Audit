@@ -182,44 +182,107 @@ class IntegrityPDF(FPDF):
 
 # 3. Utilities
 def extract_text(uploaded_file):
+    """Extract text from PDF or DOCX files with better error handling"""
     text = ""
     try:
         if uploaded_file.name.endswith('.pdf'):
             reader = PdfReader(uploaded_file)
-            for page in reader.pages: text += page.extract_text() or ""
+            for page in reader.pages: 
+                text += page.extract_text() or ""
         elif uploaded_file.name.endswith('.docx'):
             doc = Document(uploaded_file)
             for para in doc.paragraphs: 
-                if para.text.strip(): text += para.text + "\n"
+                if para.text.strip(): 
+                    text += para.text + "\n"
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
-                        if cell.text.strip(): text += cell.text + " "
+                        if cell.text.strip(): 
+                            text += cell.text + " "
                     text += "\n"
-    except Exception as e: st.error(f"Extraction error: {e}")
+        
+        if not text.strip():
+            st.error("File appears to be empty or unreadable.")
+            return None
+            
+    except Exception as e: 
+        st.error(f"Extraction error: {e}")
+        return None
+    
     return text
 
 def scrape_url(url):
+    """Scrape URL with better security and error handling"""
     try:
-        response = requests.get(url, timeout=10)
+        # Add user agent to avoid being blocked
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        response = requests.get(url, timeout=10, headers=headers, allow_redirects=True)
+        response.raise_for_status()  # Raise error for bad status codes
+        
         soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+            
         tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li', 'td'])
-        return "\n".join([t.get_text() for t in tags])
-    except Exception as e: return f"Error: {str(e)}"
+        text = "\n".join([t.get_text().strip() for t in tags if t.get_text().strip()])
+        
+        if not text:
+            return "Error: Could not extract text from URL"
+            
+        return text
+    except Exception as e: 
+        return f"Error: {str(e)}"
 
 def clean_json_string(raw_string):
+    """Clean JSON response from Gemini with better error handling"""
+    # Remove markdown code blocks
     cleaned = re.sub(r'```json\s*|\s*```', '', raw_string)
+    # Try to find JSON object
     match = re.search(r'\{.*\}', cleaned, re.DOTALL)
-    return match.group(0) if match else cleaned.strip()
+    if match:
+        return match.group(0)
+    return cleaned.strip()
 
 @st.cache_resource
 def discover_model(api_key):
+    """Discover available Gemini model with fallback"""
     genai.configure(api_key=api_key)
     try:
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        flash = [m for m in models if 'flash' in m]
+        flash = [m for m in models if 'flash' in m.lower()]
         return flash[0] if flash else models[0]
-    except: return 'models/gemini-1.5-flash'
+    except:
+        return 'models/gemini-1.5-flash'
+
+# CORRECT CATEGORIES FROM THE PDF
+INTEGRITY_CATEGORIES = [
+    "Final product weighting",
+    "Iterative documentation", 
+    "Contextual specificity",
+    "Reflective criticality",
+    "Temporal friction",
+    "Multimodal evidence",
+    "Explicit AI interrogation",
+    "Real-time defence",
+    "Social and collaborative labour",
+    "Data recency"
+]
+
+# Category descriptions for the AI prompt
+CATEGORY_DESCRIPTIONS = {
+    "Final product weighting": "Does the assessment reward the learning process over the final product? Score 1 (multiple formative stages) to 5 (single end-of-term submission).",
+    "Iterative documentation": "Does the assessment require evidence of the messy middle of learning? Score 1 (mandatory brain-dumps, mind maps, rejected ideas) to 5 (polished PDF only).",
+    "Contextual specificity": "Is the assessment tied to specific local/classroom contexts that AI cannot access? Score 1 (unique in-class discussions) to 5 (broad theoretical questions).",
+    "Reflective criticality": "Does the assessment require deep personal synthesis? Score 1 (narrative on emotional reactions) to 5 (generic professional reflection).",
+    "Temporal friction": "Is it physically impossible to complete quickly? Score 1 (longitudinal study over weeks) to 5 (can be done in one night).",
+    "Multimodal evidence": "Does the assessment require non-text outputs? Score 1 (audio, physical models, hand-drawn) to 5 (standard Word document).",
+    "Explicit AI interrogation": "Does the assessment require students to critique AI outputs? Score 1 (generate and critique AI drafts) to 5 (AI ignored or banned).",
+    "Real-time defence": "Does the assessment include live interaction? Score 1 (mandatory viva with Q&A) to 5 (entirely asynchronous).",
+    "Social and collaborative labour": "Does the assessment require verified group work? Score 1 (observed collaboration with peer review) to 5 (entirely solitary work).",
+    "Data recency": "Does the assessment engage with very recent events/data? Score 1 (last fortnight) to 5 (static concepts from decades ago)."
+}
 
 # 4. Interface
 st.title("Integrity Debt Diagnostic")
@@ -240,7 +303,7 @@ with c1:
     Include the task description, learning outcomes, and submission formats for accurate results.
     """)
 with c2:
-    st.info("**The Scoring System**\n* 🟢 5: Resilient\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable")
+    st.info("**The Scoring System**\n* 🟢 5: Resilient (Slow AI)\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable (Fast AI)")
 
 st.divider()
 
@@ -253,12 +316,22 @@ with st.container():
         with st.form("audit_form"):
             st.subheader("1. Setup")
             sc1, sc2 = st.columns(2)
-            with sc1: email_user = st.text_input("Your Email (required):")
-            with sc2: expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
+            with sc1: 
+                email_user = st.text_input("Your Email (required):")
+            with sc2: 
+                expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
+            
             st.subheader("2. Assessment Input")
             input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"])
-            uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"]) if input_type == "File Upload" else None
-            raw_input = st.text_area("Paste Content or Public URL:", height=200)
+            
+            uploaded_file = None
+            raw_input = ""
+            
+            if input_type == "File Upload":
+                uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"])
+            else:
+                raw_input = st.text_area("Paste Content or Public URL:", height=200)
+            
             submit_button = st.form_submit_button("Generate Diagnostic Report")
     else:
         if st.button("Audit New Brief"):
@@ -267,13 +340,35 @@ with st.container():
 
 # 5. Logic
 api_key = st.secrets.get("GEMINI_API_KEY")
+
 if not st.session_state.audit_complete and 'submit_button' in locals() and submit_button:
-    if not api_key or not email_user: st.error("Email and Secrets configuration required.")
+    # Validation
+    if not api_key:
+        st.error("API key configuration missing. Please contact the administrator.")
+    elif not email_user or '@' not in email_user:
+        st.error("Please provide a valid email address.")
     else:
-        final_text = extract_text(uploaded_file) if input_type == "File Upload" and uploaded_file else (scrape_url(raw_input) if raw_input.startswith("http") else raw_input)
-        if not final_text: st.error("No assessment content provided.")
+        # Extract text from input
+        final_text = None
+        
+        if input_type == "File Upload" and uploaded_file:
+            final_text = extract_text(uploaded_file)
+        elif raw_input:
+            if raw_input.startswith("http"):
+                with st.spinner("Fetching URL content..."):
+                    final_text = scrape_url(raw_input)
+                    if final_text.startswith("Error:"):
+                        st.error(final_text)
+                        final_text = None
+            else:
+                final_text = raw_input
+        
+        if not final_text:
+            st.error("No assessment content provided or content could not be extracted.")
+        elif len(final_text) < 100:
+            st.error("Assessment content is too short. Please provide a complete assessment brief.")
         else:
-            with st.spinner("Refining Diagnostic Framework..."):
+            with st.spinner("Analyzing assessment against Integrity Debt framework..."):
                 try:
                     target = discover_model(api_key)
                     model = genai.GenerativeModel(
@@ -281,70 +376,207 @@ if not st.session_state.audit_complete and 'submit_button' in locals() and submi
                         generation_config={"temperature": 0.0, "top_p": 0.1, "top_k": 1}
                     )
                     
-                    cat_anchors = ["Conceptual Friction", "Environmental Logic", "Software Dependency", "Process Transparency", "Contextual Binding", "Reflective Depth", "Data Sovereignty", "Creative Divergence", "Technical Defence", "Ethical Agency"]
+                    # Build category descriptions for prompt
+                    category_info = "\n".join([f"- {cat}: {desc}" for cat, desc in CATEGORY_DESCRIPTIONS.items()])
                     
-                    prompt = f"""
-                    You are Professor Sam Illingworth. Perform a triage and audit.
-                    Audit using exactly: {', '.join(cat_anchors)}.
-                    RULES: return ONLY JSON; escape values.
-                    Format: {{"doc_context": "title", "top_improvements": ["1", "2", "3"], "audit_results": [{{ "category": "name", "score": 1-5, "critique": "text", "question": "text", "quote": "text" }}] }}
-                    Text: {final_text[:8000]}
-                    """
+                    prompt = f"""You are Professor Sam Illingworth conducting an Integrity Debt Audit for a Higher Education assessment.
+
+CRITICAL INSTRUCTIONS:
+1. Analyze the assessment brief against EXACTLY these 10 categories in this exact order:
+{category_info}
+
+2. For each category, provide:
+   - A score from 1-5 (where 1 = Slow AI/Resilient, 5 = Fast AI/Vulnerable)
+   - A critique explaining why you gave this score
+   - A dialogue question to help the educator reflect
+   - A direct quote from the assessment that supports your score
+
+3. Your response MUST be valid JSON with this exact structure:
+{{
+    "doc_context": "Brief title/description of the assessment",
+    "top_improvements": ["Improvement 1", "Improvement 2", "Improvement 3"],
+    "audit_results": [
+        {{
+            "category": "Final product weighting",
+            "score": 3,
+            "critique": "Your analysis here",
+            "question": "Reflective question here",
+            "quote": "Direct quote from assessment"
+        }},
+        ... (repeat for all 10 categories in order)
+    ]
+}}
+
+4. IMPORTANT: 
+   - Use ONLY the category names listed above
+   - Provide exactly 10 results, one for each category
+   - Scores must be integers from 1-5
+   - If information is missing for a category, estimate based on typical practices and note this in the critique
+
+Assessment text to analyze:
+{final_text[:8000]}
+
+Return ONLY valid JSON with no additional text or markdown formatting."""
+
                     response = model.generate_content(prompt)
                     res_raw = clean_json_string(response.text)
-                    res_json = json.loads(res_raw)
                     
-                    if res_json.get("status") == "error": st.error("No task identified.")
-                    else:
-                        st.session_state.res_json = res_json
-                        st.session_state.audit_complete = True
-                        st.rerun()
-                except Exception as e: st.error(f"Audit failed: {e}")
+                    try:
+                        res_json = json.loads(res_raw)
+                    except json.JSONDecodeError as e:
+                        st.error(f"Failed to parse AI response as JSON. Error: {e}")
+                        st.code(res_raw)
+                        st.stop()
+                    
+                    # Validate response structure
+                    if not isinstance(res_json, dict):
+                        st.error("AI returned invalid response format.")
+                        st.stop()
+                    
+                    if "status" in res_json and res_json["status"] == "error":
+                        st.error("No clear assessment task could be identified in the provided text.")
+                        st.stop()
+                    
+                    # Store in session state
+                    st.session_state.res_json = res_json
+                    st.session_state.audit_complete = True
+                    st.rerun()
+                    
+                except Exception as e: 
+                    st.error(f"Audit failed: {e}")
+                    st.error("This may be due to API limits or connectivity issues. Please try again.")
 
+# Display results
 if st.session_state.audit_complete:
     res_json = st.session_state.res_json
-    cat_anchors = ["Conceptual Friction", "Environmental Logic", "Software Dependency", "Process Transparency", "Contextual Binding", "Reflective Depth", "Data Sovereignty", "Creative Divergence", "Technical Defence", "Ethical Agency"]
     
+    # Process audit results with proper validation
     total_score = 0
     final_audit_results = {}
     audit_list = res_json.get("audit_results", [])
-    if not isinstance(audit_list, list): audit_list = list(audit_list.values())
-
-    for anchor in cat_anchors:
-        match = next((item for item in audit_list if isinstance(item, dict) and (anchor.lower() in str(item).lower())), None)
-        if match:
-            item_json = json.dumps(match)
-            sc_match = re.search(r'"(?:score|points|rating)"\s*:\s*"?(\d+)"?', item_json, re.IGNORECASE)
-            s_val = int(sc_match.group(1)) if sc_match else 0
-            total_score += s_val
-            final_audit_results[anchor] = match
-            final_audit_results[anchor]['verified_score'] = s_val
-        else:
-            final_audit_results[anchor] = {"critique": "Data extraction failure.", "verified_score": 0, "question": "N/A", "quote": "N/A"}
-
-    ctx = res_json.get("doc_context") or "Assessment Audit"
-    imps = res_json.get("top_improvements") or ["Review individual categories."]
     
+    # Ensure audit_list is actually a list
+    if not isinstance(audit_list, list):
+        if isinstance(audit_list, dict):
+            audit_list = list(audit_list.values())
+        else:
+            audit_list = []
+    
+    # Match results to categories
+    for cat_name in INTEGRITY_CATEGORIES:
+        # Try to find a match for this category
+        match = None
+        for item in audit_list:
+            if not isinstance(item, dict):
+                continue
+            item_cat = item.get('category', '').lower()
+            if cat_name.lower() in item_cat or item_cat in cat_name.lower():
+                match = item
+                break
+        
+        if match:
+            # Extract score - try multiple possible fields
+            score = 0
+            for field in ['score', 'points', 'rating']:
+                if field in match:
+                    try:
+                        score = int(match[field])
+                        break
+                    except (ValueError, TypeError):
+                        # Try to extract number from string
+                        score_str = str(match[field])
+                        score_match = re.search(r'\d+', score_str)
+                        if score_match:
+                            score = int(score_match.group(0))
+                            break
+            
+            # Clamp score to valid range
+            score = max(1, min(5, score))
+            
+            final_audit_results[cat_name] = {
+                'verified_score': score,
+                'critique': match.get('critique', 'No critique provided'),
+                'question': match.get('question', 'No question provided'),
+                'quote': match.get('quote', 'No quote provided')
+            }
+            total_score += score
+        else:
+            # No match found - create placeholder
+            final_audit_results[cat_name] = {
+                'verified_score': 3,  # Default to middle score
+                'critique': 'Insufficient information provided to evaluate this category.',
+                'question': 'How could this category be better addressed in your assessment?',
+                'quote': 'N/A'
+            }
+            total_score += 3
+    
+    # Get context and improvements
+    ctx = res_json.get("doc_context", "Assessment Audit")
+    imps = res_json.get("top_improvements", ["Review individual categories for specific improvements"])
+    
+    # Ensure improvements is a list
+    if not isinstance(imps, list):
+        imps = [str(imps)]
+    
+    # Calculate susceptibility level
+    if total_score <= 20:
+        susceptibility = "Low (Pedagogical Sovereignty)"
+    elif total_score <= 35:
+        susceptibility = "Medium (Structural Drift)"
+    else:
+        susceptibility = "High (Critical Integrity Failure)"
+    
+    # Display summary
     st.subheader(f"Diagnostic Focus: {ctx}")
-    st.markdown(f"**Integrity Score: {total_score}/50**")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        score_color = "🟢" if total_score <= 20 else "🟡" if total_score <= 35 else "🔴"
+        st.metric("Integrity Score", f"{total_score}/50", delta=score_color)
+    with col2:
+        st.metric("AI Susceptibility", susceptibility.split('(')[0].strip())
+    
     st.caption("⚠️ Note: Formal PDF contains full detailed report; this view is a summary.")
     
-    # Download Button at Top for UX
+    # Generate PDF
     pdf = IntegrityPDF()
     pdf.alias_nb_pages()
     pdf.add_page()
-    pdf.add_summary("Medium" if total_score < 40 else "Low", total_score, imps, ctx)
-    for c_name, d in final_audit_results.items():
-        pdf.add_category(c_name, d.get('verified_score', 0), d.get('critique', 'N/A'), d.get('question', 'N/A'), d.get('quote', 'N/A'))
+    pdf.add_summary(susceptibility.split('(')[0].strip(), total_score, imps, ctx)
+    
+    for cat_name, data in final_audit_results.items():
+        pdf.add_category(
+            cat_name, 
+            data['verified_score'], 
+            data['critique'], 
+            data['question'], 
+            data['quote']
+        )
+    
     pdf.add_contact_box()
-    st.download_button("Download Full Evidence Report (PDF)", data=bytes(pdf.output()), file_name="Integrity_Debt_Audit.pdf")
-
-    st.divider()
-    for c_name, d in final_audit_results.items():
-        sc = d.get('verified_score', 0)
-        label = "🟢" if sc == 5 else "🟡" if sc >= 3 else "🔴"
-        st.write(f"{label} **{c_name} ({sc}/5)**")
-        st.write(d.get('critique', 'N/A'))
+    
+    # Download button
+    st.download_button(
+        "📥 Download Full Evidence Report (PDF)", 
+        data=bytes(pdf.output()), 
+        file_name="Integrity_Debt_Audit.pdf",
+        mime="application/pdf"
+    )
     
     st.divider()
-    st.caption("End of summary. For pedagogical rationale and evidence quotes, please download the PDF report.")
+    
+    # Display category breakdown
+    st.subheader("Category Breakdown")
+    
+    for cat_name, data in final_audit_results.items():
+        score = data['verified_score']
+        label = "🟢" if score <= 2 else "🟡" if score <= 3 else "🔴"
+        
+        with st.expander(f"{label} **{cat_name}** ({score}/5)"):
+            st.markdown(f"**Critique:** {data['critique']}")
+            st.markdown(f"**Question for reflection:** {data['question']}")
+            if data['quote'] != 'N/A':
+                st.markdown(f"**Evidence:** _{data['quote']}_")
+    
+    st.divider()
+    st.caption("End of summary. For full pedagogical rationale and evidence quotes, please download the PDF report.")
