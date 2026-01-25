@@ -63,26 +63,32 @@ st.markdown("""
         color: black !important;
     }
     
-    /* Fix buttons */
+    /* Fix buttons - simple white background with dark text */
     .stButton > button {
-        background-color: #2D4D4A !important;
-        color: white !important;
-        border: none !important;
+        background-color: white !important;
+        color: #212529 !important;
+        border: 2px solid #212529 !important;
         padding: 12px 24px !important;
         font-weight: 600 !important;
     }
     
     .stButton > button:hover {
-        background-color: #1a2e2c !important;
+        background-color: #f8f9fa !important;
+        border: 2px solid #000000 !important;
     }
     
-    /* Fix form submit button */
+    /* Fix form submit button - same simple style */
     .stFormSubmitButton > button {
-        background-color: #2D4D4A !important;
-        color: white !important;
-        border: none !important;
+        background-color: white !important;
+        color: #212529 !important;
+        border: 2px solid #212529 !important;
         padding: 12px 24px !important;
         font-weight: 600 !important;
+    }
+    
+    .stFormSubmitButton > button:hover {
+        background-color: #f8f9fa !important;
+        border: 2px solid #000000 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -428,8 +434,8 @@ with st.container():
             
             if input_type == "File Upload":
                 uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"])
-            else:
-                raw_input = st.text_area("Paste Content or Public URL:", height=200, key="paste_input")
+            else:  # Paste Text or URL
+                raw_input = st.text_area("Paste Assessment Brief or Public URL:", height=200, placeholder="Paste your assessment text here, or enter a URL to a public assessment page...")
             
             submit_button = st.form_submit_button("Generate Diagnostic Report")
     else:
@@ -684,13 +690,13 @@ if st.session_state.audit_complete:
     
     pdf.add_contact_box()
     
-    # Download button with custom styling
+    # Download button with custom styling - simple white/black
     st.markdown("""
         <style>
         .stDownloadButton > button {
-            background-color: #2D4D4A !important;
-            color: white !important;
-            border: none !important;
+            background-color: white !important;
+            color: #212529 !important;
+            border: 2px solid #212529 !important;
             padding: 16px 32px !important;
             font-size: 18px !important;
             font-weight: bold !important;
@@ -699,8 +705,8 @@ if st.session_state.audit_complete:
             margin: 20px 0 !important;
         }
         .stDownloadButton > button:hover {
-            background-color: #1a2e2c !important;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+            background-color: #f8f9fa !important;
+            border: 2px solid #000000 !important;
         }
         </style>
     """, unsafe_allow_html=True)
