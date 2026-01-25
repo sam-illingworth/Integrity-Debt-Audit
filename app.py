@@ -19,6 +19,35 @@ st.markdown("""
     header {visibility: hidden;}
     .reportview-container { background: white; }
     p, span, h1, h2, h3, h4, li { color: black !important; }
+    
+    /* Fix input boxes - make them visible with light background */
+    input[type="text"], input[type="email"], textarea {
+        background-color: #f8f9fa !important;
+        border: 1px solid #ced4da !important;
+        color: #212529 !important;
+        padding: 8px 12px !important;
+    }
+    
+    /* Fix select boxes */
+    select {
+        background-color: #f8f9fa !important;
+        border: 1px solid #ced4da !important;
+        color: #212529 !important;
+    }
+    
+    /* Fix file uploader */
+    .stFileUploader {
+        background-color: #f8f9fa !important;
+        border: 1px solid #ced4da !important;
+        padding: 10px !important;
+    }
+    
+    /* Fix text area */
+    .stTextArea textarea {
+        background-color: #f8f9fa !important;
+        border: 1px solid #ced4da !important;
+        color: #212529 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -303,7 +332,7 @@ with c1:
     Include the task description, learning outcomes, and submission formats for accurate results.
     """)
 with c2:
-    st.info("**The Scoring System**\n* 🟢 5: Resilient (Slow AI)\n* 🟡 3-4: Moderate\n* 🔴 1-2: Vulnerable (Fast AI)")
+    st.info("**The Scoring System**\n* 🟢 1-2: Resilient (Slow AI)\n* 🟡 3: Moderate\n* 🔴 4-5: Vulnerable (Fast AI)")
 
 st.divider()
 
@@ -570,7 +599,9 @@ if st.session_state.audit_complete:
     
     for cat_name, data in final_audit_results.items():
         score = data['verified_score']
-        label = "🟢" if score <= 2 else "🟡" if score <= 3 else "🔴"
+        # Remember: LOW scores (1-2) are GOOD (resilient) = GREEN
+        # HIGH scores (4-5) are BAD (vulnerable) = RED
+        label = "🟢" if score <= 2 else "🟡" if score == 3 else "🔴"
         
         with st.expander(f"{label} **{cat_name}** ({score}/5)"):
             st.markdown(f"**Critique:** {data['critique']}")
