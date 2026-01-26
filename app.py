@@ -93,6 +93,117 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# ==============================================================================
+# DATA STRUCTURES FOR ENHANCED PDF GENERATION
+# ==============================================================================
+
+CASE_STUDIES = {
+    'Final product weighting': {
+        'score_1_2': 'A research project worth 60% is broken into: research plan (10%), annotated bibliography (15%), draft with peer feedback (15%), final submission (20%). No single component dominates. Students must demonstrate iterative development across the semester.',
+        'score_3': 'Students submit a draft for feedback (5%) and then the final essay is worth 55%. The draft feels like a tick-box exercise rather than meaningful scaffolding.',
+        'score_4_5': 'The entire module is assessed by a single essay submitted in week 12. No formative work is required. Students could complete this in 24 hours using AI.'
+    },
+    'Iterative documentation': {
+        'score_1_2': 'Students maintain a weekly lab book showing false starts, abandoned hypotheses, and evolving thinking. They submit photos of handwritten notes alongside the final polished report.',
+        'score_3': 'The submission includes an annotated bibliography explaining source selection, but there is no evidence of the actual research journey or dead ends explored.',
+        'score_4_5': 'A beautifully formatted literature review appears with perfect citations and no trace of how the student actually arrived at their conclusions. Could have been generated in minutes.'
+    },
+    'Contextual specificity': {
+        'score_1_2': 'Apply this week\'s seminar debate about data privacy to the recent council decision on CCTV expansion in our town centre. Reference specific points raised by guest speaker Dr Martinez.',
+        'score_3': 'Analyse the 2024 supply chain crisis at Company X using Porter\'s Five Forces. The case is specific but widely covered in business news, making AI responses feasible.',
+        'score_4_5': 'Discuss the main theories of motivation in organisational psychology. This is a textbook question with thousands of pre-existing model answers online and in AI training data.'
+    },
+    'Reflective criticality': {
+        'score_1_2': 'Write about a specific moment during your placement where you felt uncomfortable or uncertain. Describe the physical sensations, your immediate thoughts, and how your understanding shifted.',
+        'score_3': 'Use Gibbs\' Reflective Cycle to analyse your group work experience. Students follow the template structure but use generic professional language without genuine introspection.',
+        'score_4_5': 'Reflect on your learning this semester. Responses are full of clichés like \'this experience taught me valuable lessons\' with no specific, personal detail. Completely automatable.'
+    },
+    'Temporal friction': {
+        'score_1_2': 'Students interview the same participant three times over six weeks to track changing attitudes. The time gap is mandatory and data-stamped. Cannot be rushed.',
+        'score_3': 'Students must consult three physical archive documents not available online. Adds friction but a motivated student could complete this in one intensive day.',
+        'score_4_5': 'Review the literature on climate policy and submit by Friday. No staged drafts. A student with access to AI could complete this between midnight and 6am.'
+    },
+    'Multimodal evidence': {
+        'score_1_2': 'Students submit a 1,000-word essay plus a 3-minute audio reflection plus hand-drawn concept maps photographed and annotated. Multiple modes of expression required.',
+        'score_3': 'Students create slides and submit a written script. Both text-based and easily automated. The visual element doesn\'t add meaningful friction.',
+        'score_4_5': 'A traditional essay submitted as a Word file. AI\'s native format. Zero multimodal friction.'
+    },
+    'Explicit AI interrogation': {
+        'score_1_2': 'Use ChatGPT to write a 500-word introduction to your topic. Then write 1,500 words identifying factual errors, biased framing, missing nuance, and citation gaps.',
+        'score_3': 'Students append a paragraph stating whether they used AI and how. Transparency is encouraged but there is no critical engagement with the tool\'s limitations.',
+        'score_4_5': 'Module handbook states \'AI tools are prohibited\' but provides no guidance, no monitoring, and no pedagogical engagement with why this matters. Students use AI anyway.'
+    },
+    'Real-time defence': {
+        'score_1_2': 'After submitting their dissertation, students defend it in a 15-minute viva with two examiners asking spontaneous questions about methodology, findings, and theoretical framing.',
+        'score_3': 'Groups present their project, with one designated speaker delivering a scripted presentation. All members answer questions, but the script could still be AI-generated.',
+        'score_4_5': 'Students submit their work via Turnitin and receive written feedback two weeks later. Zero human dialogue. The marker has no evidence the student even read the sources.'
+    },
+    'Social and collaborative labour': {
+        'score_1_2': 'Students work in groups during class time under tutor observation. Each member presents their contribution live. Peer feedback forms are completed in class.',
+        'score_3': 'Groups submit one document and all receive the same mark. No mechanism to verify individual contribution. One student could use AI to do everything.',
+        'score_4_5': 'Individual essay written alone at home with no required peer discussion, no collaborative drafting, no dialogue. Perfect conditions for complete AI automation.'
+    },
+    'Data recency': {
+        'score_1_2': 'Analyse this morning\'s inflation data release using the models we studied in weeks 1-5. Submit by 5pm. The data is so fresh that AI training data cannot include it.',
+        'score_3': 'Discuss the political developments of autumn 2024. Recent enough to show engagement, but AI models trained on rolling data can still synthesise coherent responses.',
+        'score_4_5': 'Explain Maslow\'s Hierarchy of Needs. This is textbook content unchanged since 1943. AI can reproduce perfect answers from millions of training examples.'
+    }
+}
+
+IMPROVEMENT_ACTIONS = {
+    'Final product weighting': [
+        'Allocate 20% of marks to the initial research plan',
+        'Require a \'response to feedback\' log as part of the final submission',
+        'Use scaffolded deadlines throughout the module'
+    ],
+    'Iterative documentation': [
+        'Mandate the use of a weekly digital or physical lab book/process log',
+        'Include a \'failed paths\' section where students explain ideas they abandoned',
+        'Encourage version control or tracked changes as evidence'
+    ],
+    'Contextual specificity': [
+        'Reference a specific guest speaker or seminar debate in the prompt',
+        'Require students to apply theory to a local community issue',
+        'Update prompts every semester to reflect the current political or social climate'
+    ],
+    'Reflective criticality': [
+        'Ask for \'I\' statements and specific sensory details of the learning experience',
+        'Encourage non-standard formats like reflective poetry or audio diaries',
+        'Require students to link specific personal values to the academic content'
+    ],
+    'Temporal friction': [
+        'Build in a mandated peer-review cycle in week 6 of a 12-week module',
+        'Require data collection that occurs at specific intervals',
+        'Design tasks that require sequential steps that cannot be bypassed'
+    ],
+    'Multimodal evidence': [
+        'Replace one essay with a 5-minute narrated video or podcast',
+        'Require hand-drawn diagrams or mind maps to be scanned and included',
+        'Use pitch sessions where students explain concepts verbally'
+    ],
+    'Explicit AI interrogation': [
+        'Set an assessment where the goal is to break the AI\'s logic',
+        'Task students with fact-checking a synthetic essay',
+        'Discuss the ethical and environmental costs of AI in the classroom'
+    ],
+    'Real-time defence': [
+        'Implement 10-minute \'flash vivas\' for high-stakes work',
+        'Use in-class critique sessions where peers question each other\'s methodology',
+        'Record short verbal feedback loops between tutor and student'
+    ],
+    'Social and collaborative labour': [
+        'Grade the quality of the feedback a student gives to their teammates',
+        'Use collaborative drafting sessions during seminar time',
+        'Require a reflective log on the challenges of the group dynamic'
+    ],
+    'Data recency': [
+        'Use \'this morning\'s headlines\' as the basis for a theory application',
+        'Require students to use the most recent 6 months of a specific journal',
+        'Set tasks based on live, streaming data or current social media trends'
+    ]
+}
+
+
 # 2. Professional PDF Class - UPDATED FOR ORPHAN PREVENTION
 class IntegrityPDF(FPDF):
     def __init__(self):
@@ -246,12 +357,125 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
-        contact_txt = "As a Full Professor with over 20 years experience of working in higher education, I can help interpret your diagnostic results to develop AI-resilient assessments and curricula. Contact me to discuss your specific organisational requirements."
+        contact_txt = "As a Full Professor with over 20 years experience of working in higher education, I can help interpret your diagnostic results to develop AI-resilient assessments and curricula.\n\nBook a strategy call to plan your curriculum redesign: sam.illingworth@gmail.com\n\nJoin the Slow AI community: theslowai.substack.com"
         self.multi_cell(0, 6, self.safe_text(contact_txt), 1, 'L', True)
         self.ln(5)
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.cell(0, 6, "Email: sam.illingworth@gmail.com | Substack: https://samillingworth.substack.com/", 0, 1, 'C')
+
+    def add_category_deep_dive(self, name, score, critique, question, quote, case_study, actions):
+        """Enhanced category page with case study and actions"""
+        self.check_page_break(80)
+        accent = self.success if score >= 4 else self.warning if score == 3 else self.danger
+        status = 'RESILIENT' if score >= 4 else 'MODERATE' if score == 3 else 'VULNERABLE'
+        
+        self.set_x(20)
+        start_y = self.get_y()
+        self.set_fill_color(*accent)
+        self.rect(20, start_y + 2, 2, 8, 'F')
+        self.set_xy(23, start_y)
+        self.set_font('helvetica', 'B', 12)
+        self.set_text_color(*self.primary_color)
+        self.cell(120, 12, f' {self.safe_text(name)}', 0, 0, 'L')
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*accent)
+        self.cell(0, 12, f'Score: {score}/5 | {status}', 0, 1, 'R')
+        
+        # AI critique
+        self.set_x(20)
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, 'Your Assessment:', 0, 1)
+        self.set_x(20)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        self.multi_cell(0, 6, self.safe_text(critique))
+        self.ln(3)
+        
+        # Case study
+        self.set_x(20)
+        self.set_font('helvetica', 'B', 10)
+        self.cell(0, 6, 'What This Means:', 0, 1)
+        self.set_x(20)
+        self.set_font('helvetica', '', 9)
+        self.set_fill_color(250, 250, 250)
+        self.multi_cell(0, 5, self.safe_text(case_study), 0, 'L', True)
+        self.ln(3)
+        
+        # Actions
+        self.set_x(20)
+        self.set_font('helvetica', 'B', 10)
+        self.cell(0, 6, 'To Improve:', 0, 1)
+        for i, action in enumerate(actions, 1):
+            self.set_x(20)
+            self.set_font('helvetica', '', 10)
+            self.set_text_color(*self.accent_blue)
+            self.cell(7, 6, f'{i}.', 0, 0)
+            self.set_text_color(*self.text_color_val)
+            self.multi_cell(0, 6, self.safe_text(action))
+        self.ln(2)
+        
+        # Question
+        self.set_x(20)
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, 'Reflect:', 0, 1)
+        self.set_x(20)
+        self.set_font('helvetica', 'I', 10)
+        self.multi_cell(0, 6, self.safe_text(question))
+        self.ln(3)
+        
+        # Evidence
+        self.set_x(20)
+        self.set_font('helvetica', 'B', 9)
+        self.cell(0, 6, 'Evidence:', 0, 1)
+        self.set_x(20)
+        self.set_font('courier', '', 9)
+        self.set_text_color(80, 80, 80)
+        self.set_fill_color(250, 250, 250)
+        self.multi_cell(0, 5, f'"{self.safe_text(quote)}"', 1, 'L', True)
+        self.ln(8)
+
+    def add_action_plan(self, results):
+        """Pre-filled action plan for 3 weakest categories"""
+        self.check_page_break(80)
+        self.add_page()
+        self.set_font('helvetica', 'B', 16)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 10, 'Priority Action Plan', 0, 1)
+        self.ln(3)
+        self.set_font('helvetica', '', 11)
+        self.multi_cell(0, 6, 'Focus on your three weakest categories:')
+        self.ln(5)
+        
+        sorted_cats = sorted(results.items(), key=lambda x: x[1]['verified_score'])
+        for rank, (cat_name, data) in enumerate(sorted_cats[:3], 1):
+            self.set_font('helvetica', 'B', 12)
+            self.set_text_color(*self.primary_color)
+            self.cell(0, 8, f'Priority {rank}: {cat_name} ({data["verified_score"]}/5)', 0, 1)
+            actions = IMPROVEMENT_ACTIONS.get(cat_name, [])
+            for i, action in enumerate(actions, 1):
+                self.set_x(25)
+                self.set_font('helvetica', 'B', 10)
+                self.set_text_color(*self.accent_blue)
+                self.cell(7, 6, f'{i}.', 0, 0)
+                self.set_font('helvetica', '', 10)
+                self.set_text_color(*self.text_color_val)
+                self.multi_cell(0, 6, self.safe_text(action))
+            self.ln(5)
+
+    def add_citation_box(self):
+        """Academic citation"""
+        self.check_page_break(30)
+        self.set_font('helvetica', 'B', 12)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 8, 'Cite This Framework:', 0, 1)
+        self.ln(2)
+        citation = 'Illingworth, S. (2026). The Integrity Debt Audit. https://integrity-debt-audit.streamlit.app/'
+        self.set_font('helvetica', '', 10)
+        self.set_fill_color(250, 250, 250)
+        self.multi_cell(0, 6, citation, 1, 'L', True)
 
 # 3. Utilities
 def extract_text(uploaded_file):
@@ -385,18 +609,13 @@ This diagnostic evaluates your assessment brief across **10 evidence-based categ
 
 Think of this screen as a medical triage; the PDF is the full diagnostic report you'd discuss with colleagues.
 
-### Want the complete framework?
+### Need support with implementation?
 
-For a deep dive into the methodology, practical examples, and a curriculum redesign template, download the full strategy guide: 
-**[Beyond AI Detection: The Integrity Debt Audit](https://samillingworth.gumroad.com/l/integrity-debt-audit)**
+If your institution needs help interpreting results or redesigning high-stakes assessments, I offer bespoke consultancy.
 
-This guide includes:
-- The theoretical foundation of each category with research citations
-- Before/after assessment examples from multiple disciplines  
-- A syllabus template for communicating your approach to students
-- Guidance on implementing Slow AI principles across your curriculum
+**Book a strategy call to plan your curriculum redesign:** [sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com)
 
-If your institution needs support interpreting results or redesigning high-stakes assessments, I offer bespoke consultancy: **[sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com)**
+Join the Slow AI community for ongoing insights: [theslowai.substack.com](https://theslowai.substack.com)
 """)
 
 st.divider()
@@ -710,14 +929,36 @@ if st.session_state.audit_complete:
     pdf.add_summary(susceptibility.split('(')[0].strip(), total_score, imps, ctx)
     
     for cat_name, data in final_audit_results.items():
-        pdf.add_category(
+        score = data['verified_score']
+        # Select appropriate case study based on score
+        if score <= 2:
+            case_study = CASE_STUDIES[cat_name]['score_1_2']
+        elif score == 3:
+            case_study = CASE_STUDIES[cat_name]['score_3']
+        else:
+            case_study = CASE_STUDIES[cat_name]['score_4_5']
+        
+        # Get improvement actions
+        actions = IMPROVEMENT_ACTIONS[cat_name]
+        
+        # Use enhanced method with case study and actions
+        pdf.add_category_deep_dive(
             cat_name, 
-            data['verified_score'], 
+            score,
             data['critique'], 
             data['question'], 
-            data['quote']
+            data['quote'],
+            case_study,
+            actions
         )
     
+    # Add action plan page
+    pdf.add_action_plan(final_audit_results)
+    
+    # Add citation
+    pdf.add_citation_box()
+    
+    # Add contact box last
     pdf.add_contact_box()
     
     # Download button with custom styling - simple white/black
