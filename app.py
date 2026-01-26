@@ -97,57 +97,17 @@ st.markdown("""
 # DATA STRUCTURES FOR ENHANCED PDF GENERATION
 # ==============================================================================
 
-CASE_STUDIES = {
-    'Final product weighting': {
-        'score_1_2': 'A research project worth 60% is broken into: research plan (10%), annotated bibliography (15%), draft with peer feedback (15%), final submission (20%). No single component dominates. Students must demonstrate iterative development across the semester.',
-        'score_3': 'Students submit a draft for feedback (5%) and then the final essay is worth 55%. The draft feels like a tick-box exercise rather than meaningful scaffolding.',
-        'score_4_5': 'The entire module is assessed by a single essay submitted in week 12. No formative work is required. Students could complete this in 24 hours using AI.'
-    },
-    'Iterative documentation': {
-        'score_1_2': 'Students maintain a weekly lab book showing false starts, abandoned hypotheses, and evolving thinking. They submit photos of handwritten notes alongside the final polished report.',
-        'score_3': 'The submission includes an annotated bibliography explaining source selection, but there is no evidence of the actual research journey or dead ends explored.',
-        'score_4_5': 'A beautifully formatted literature review appears with perfect citations and no trace of how the student actually arrived at their conclusions. Could have been generated in minutes.'
-    },
-    'Contextual specificity': {
-        'score_1_2': 'Apply this week\'s seminar debate about data privacy to the recent council decision on CCTV expansion in our town centre. Reference specific points raised by guest speaker Dr Martinez.',
-        'score_3': 'Analyse the 2024 supply chain crisis at Company X using Porter\'s Five Forces. The case is specific but widely covered in business news, making AI responses feasible.',
-        'score_4_5': 'Discuss the main theories of motivation in organisational psychology. This is a textbook question with thousands of pre-existing model answers online and in AI training data.'
-    },
-    'Reflective criticality': {
-        'score_1_2': 'Write about a specific moment during your placement where you felt uncomfortable or uncertain. Describe the physical sensations, your immediate thoughts, and how your understanding shifted.',
-        'score_3': 'Use Gibbs\' Reflective Cycle to analyse your group work experience. Students follow the template structure but use generic professional language without genuine introspection.',
-        'score_4_5': 'Reflect on your learning this semester. Responses are full of clichés like \'this experience taught me valuable lessons\' with no specific, personal detail. Completely automatable.'
-    },
-    'Temporal friction': {
-        'score_1_2': 'Students interview the same participant three times over six weeks to track changing attitudes. The time gap is mandatory and data-stamped. Cannot be rushed.',
-        'score_3': 'Students must consult three physical archive documents not available online. Adds friction but a motivated student could complete this in one intensive day.',
-        'score_4_5': 'Review the literature on climate policy and submit by Friday. No staged drafts. A student with access to AI could complete this between midnight and 6am.'
-    },
-    'Multimodal evidence': {
-        'score_1_2': 'Students submit a 1,000-word essay plus a 3-minute audio reflection plus hand-drawn concept maps photographed and annotated. Multiple modes of expression required.',
-        'score_3': 'Students create slides and submit a written script. Both text-based and easily automated. The visual element doesn\'t add meaningful friction.',
-        'score_4_5': 'A traditional essay submitted as a Word file. AI\'s native format. Zero multimodal friction.'
-    },
-    'Explicit AI interrogation': {
-        'score_1_2': 'Use ChatGPT to write a 500-word introduction to your topic. Then write 1,500 words identifying factual errors, biased framing, missing nuance, and citation gaps.',
-        'score_3': 'Students append a paragraph stating whether they used AI and how. Transparency is encouraged but there is no critical engagement with the tool\'s limitations.',
-        'score_4_5': 'Module handbook states \'AI tools are prohibited\' but provides no guidance, no monitoring, and no pedagogical engagement with why this matters. Students use AI anyway.'
-    },
-    'Real-time defence': {
-        'score_1_2': 'After submitting their dissertation, students defend it in a 15-minute viva with two examiners asking spontaneous questions about methodology, findings, and theoretical framing.',
-        'score_3': 'Groups present their project, with one designated speaker delivering a scripted presentation. All members answer questions, but the script could still be AI-generated.',
-        'score_4_5': 'Students submit their work via Turnitin and receive written feedback two weeks later. Zero human dialogue. The marker has no evidence the student even read the sources.'
-    },
-    'Social and collaborative labour': {
-        'score_1_2': 'Students work in groups during class time under tutor observation. Each member presents their contribution live. Peer feedback forms are completed in class.',
-        'score_3': 'Groups submit one document and all receive the same mark. No mechanism to verify individual contribution. One student could use AI to do everything.',
-        'score_4_5': 'Individual essay written alone at home with no required peer discussion, no collaborative drafting, no dialogue. Perfect conditions for complete AI automation.'
-    },
-    'Data recency': {
-        'score_1_2': 'Analyse this morning\'s inflation data release using the models we studied in weeks 1-5. Submit by 5pm. The data is so fresh that AI training data cannot include it.',
-        'score_3': 'Discuss the political developments of autumn 2024. Recent enough to show engagement, but AI models trained on rolling data can still synthesise coherent responses.',
-        'score_4_5': 'Explain Maslow\'s Hierarchy of Needs. This is textbook content unchanged since 1943. AI can reproduce perfect answers from millions of training examples.'
-    }
+PEDAGOGICAL_CONTEXT = {
+    'Final product weighting': 'Assessment weighting determines whether a student values the journey or just the destination. High-stakes, end-of-term submissions invite Fast AI shortcuts because the pressure to deliver a polished product outweighs the perceived benefit of genuine study. By shifting the focus to formative stages, we reward the human effort of drafting and revising, reducing the incentive to outsource the entire grade to a machine in a moment of panic.',
+    'Iterative documentation': 'AI is designed to hide its tracks and produce a seamless result instantly. Iterative documentation brings the \'messy middle\' of learning into the light by requiring students to show their intellectual scaffolding. This Slow AI approach makes automation difficult because a student must prompt an AI to simulate errors, revisions, and false starts over several weeks. It prioritises the cognitive struggle of development over the aesthetic perfection of a final PDF.',
+    'Contextual specificity': 'Large Language Models are trained on vast, generic datasets and excel at synthesising high-level theory found in textbooks. They struggle when a task is tethered to a specific time, a unique classroom debate, or a hyper-local community event. Increasing contextual specificity ensures that a student cannot rely on the general knowledge of an AI. It invites them to engage with their immediate environment and the specific nuances of your teaching.',
+    'Reflective criticality': 'Reflective writing is often treated as a checkbox exercise, which AI easily mimics using a generic, professionalised persona. True Slow AI reflection requires a deep, subjective bridge between theoretical concepts and personal experience. When we ask for genuine criticality, we ask for the one thing an AI cannot provide: a lived perspective. This ensures that the student is not just describing a process but is synthesising how that process changed their own understanding and values.',
+    'Temporal friction': 'Fast AI thrives on speed and the ability to bypass the traditional passage of time. If an assessment can be finished in a single night, it is inherently vulnerable to automation. Temporal friction introduces intentional delays, such as longitudinal data collection or mandated peer-review cycles, which make \'sprinting\' impossible. This friction protects the learning process by ensuring that students must sit with the material and allow ideas to gestate over weeks rather than hours.',
+    'Multimodal evidence': 'Text remains the primary language of current AI models and is therefore the easiest medium to automate. Requiring multimodal evidence, such as audio, physical models, or hand-drawn sketches, encourages students out of the textbox and into more complex forms of expression. This Slow AI strategy reclaims pedagogical integrity by making the assessment multi-dimensional. It ensures that the student must physically or vocally engage with the content, providing a layer of human authenticity that a Word document lacks.',
+    'Explicit AI interrogation': 'Ignoring AI only encourages covert and uncritical use. Explicit AI interrogation brings the tool into the classroom as a subject to be deconstructed rather than a ghost to be feared. By requiring students to critique AI-generated outputs, we move from passive automation to active analysis. This approach teaches students to recognise the biases and hallucinations of Fast AI and reaffirms the necessity of human oversight and subject expertise in an automated age.',
+    'Real-time defence': 'Live interaction is the ultimate proof of human cognitive labour because it requires spontaneous synthesis and unscripted thought. Whilst AI can draft a perfect presentation script, it cannot navigate a live Q&A session or justify methodological choices in real time. Introducing a Slow AI defence ensures that the student truly owns their work. It shifts the power dynamic from surveillance to dialogue, where the marker becomes a conversational partner rather than a remote auditor.',
+    'Social and collaborative labour': 'Automation is often a solitary act. Learning is most effective when it involves the social friction of collaborating with others. Solitary assessments are high-risk because there is no human witness to the learning process. By integrating verified group work and peer-to-peer feedback, we create a community of accountability. This Slow AI approach ensures that students learn through dialogue and collision with different ideas, making the outsourcing of the task to a machine much harder to hide.',
+    'Data recency': 'AI models are historical by nature because they rely on training data that is months or years old. Engaging with the present creates a data barrier that synthetic text struggles to cross without significant hallucinations. Using data recency ensures that assessments are tethered to the current world. This Slow AI tactic requires students to apply theory to headlines, datasets, or events that emerged within days of the deadline, proving they are active participants in a living curriculum.'
 }
 
 IMPROVEMENT_ACTIONS = {
@@ -364,12 +324,21 @@ class IntegrityPDF(FPDF):
         self.set_font('helvetica', 'B', 10)
         self.cell(0, 6, "Email: sam.illingworth@gmail.com | Substack: https://samillingworth.substack.com/", 0, 1, 'C')
 
-    def add_category_deep_dive(self, name, score, critique, question, quote, case_study, actions):
-        """Enhanced category page with case study and actions"""
-        self.check_page_break(80)
+    def add_category_deep_dive(self, name, score, critique, question, quote, pedagogical_context, actions):
+        """Enhanced category with pedagogical context and actions - keeps section together on page"""
+        # Calculate approximate height needed for entire section
+        context_lines = len(pedagogical_context) // 90  # Approx chars per line
+        actions_lines = len(actions) * 2  # Each action ~2 lines
+        total_height = 60 + (context_lines * 6) + (actions_lines * 6)  # Base + context + actions
+        
+        # If not enough room, start new page to keep section together
+        if self.get_y() + total_height > self.page_break_trigger:
+            self.add_page()
+        
         accent = self.success if score >= 4 else self.warning if score == 3 else self.danger
         status = 'RESILIENT' if score >= 4 else 'MODERATE' if score == 3 else 'VULNERABLE'
         
+        # Header with colored bar
         self.set_x(20)
         start_y = self.get_y()
         self.set_fill_color(*accent)
@@ -382,31 +351,34 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*accent)
         self.cell(0, 12, f'Score: {score}/5 | {status}', 0, 1, 'R')
         
-        # AI critique
+        # AI-generated critique of THEIR assessment
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
-        self.cell(0, 6, 'Your Assessment:', 0, 1)
+        self.cell(0, 6, 'Your Assessment Analysis:', 0, 1)
         self.set_x(20)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
         
-        # Case study
+        # Pedagogical theory explaining WHY this category matters
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
-        self.cell(0, 6, 'What This Means:', 0, 1)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, 'Why This Category Matters:', 0, 1)
         self.set_x(20)
-        self.set_font('helvetica', '', 9)
-        self.set_fill_color(250, 250, 250)
-        self.multi_cell(0, 5, self.safe_text(case_study), 0, 'L', True)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        self.set_fill_color(*self.bg_cream)
+        self.multi_cell(0, 6, self.safe_text(pedagogical_context), 0, 'L', True)
         self.ln(3)
         
-        # Actions
+        # Specific improvement actions
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
-        self.cell(0, 6, 'To Improve:', 0, 1)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, 'How to Improve This Assessment:', 0, 1)
         for i, action in enumerate(actions, 1):
             self.set_x(20)
             self.set_font('helvetica', '', 10)
@@ -416,30 +388,33 @@ class IntegrityPDF(FPDF):
             self.multi_cell(0, 6, self.safe_text(action))
         self.ln(2)
         
-        # Question
+        # Reflection question for curriculum conversations
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
-        self.cell(0, 6, 'Reflect:', 0, 1)
+        self.cell(0, 6, 'Question for Reflection:', 0, 1)
         self.set_x(20)
         self.set_font('helvetica', 'I', 10)
+        self.set_text_color(*self.text_color_val)
         self.multi_cell(0, 6, self.safe_text(question))
         self.ln(3)
         
-        # Evidence
+        # Evidence quote from their assessment
         self.set_x(20)
         self.set_font('helvetica', 'B', 9)
-        self.cell(0, 6, 'Evidence:', 0, 1)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, 'Evidence from Your Assessment:', 0, 1)
         self.set_x(20)
         self.set_font('courier', '', 9)
         self.set_text_color(80, 80, 80)
         self.set_fill_color(250, 250, 250)
+        self.set_draw_color(230, 230, 230)
         self.multi_cell(0, 5, f'"{self.safe_text(quote)}"', 1, 'L', True)
         self.ln(8)
 
     def add_action_plan(self, results):
         """Pre-filled action plan for 3 weakest categories"""
-        self.check_page_break(80)
+        # Always start action plan on new page
         self.add_page()
         self.set_font('helvetica', 'B', 16)
         self.set_text_color(*self.primary_color)
@@ -930,25 +905,19 @@ if st.session_state.audit_complete:
     
     for cat_name, data in final_audit_results.items():
         score = data['verified_score']
-        # Select appropriate case study based on score
-        if score <= 2:
-            case_study = CASE_STUDIES[cat_name]['score_1_2']
-        elif score == 3:
-            case_study = CASE_STUDIES[cat_name]['score_3']
-        else:
-            case_study = CASE_STUDIES[cat_name]['score_4_5']
         
-        # Get improvement actions
+        # Get pedagogical context and improvement actions
+        pedagogical_context = PEDAGOGICAL_CONTEXT[cat_name]
         actions = IMPROVEMENT_ACTIONS[cat_name]
         
-        # Use enhanced method with case study and actions
+        # Use enhanced method with theory and actions
         pdf.add_category_deep_dive(
             cat_name, 
             score,
             data['critique'], 
             data['question'], 
             data['quote'],
-            case_study,
+            pedagogical_context,
             actions
         )
     
