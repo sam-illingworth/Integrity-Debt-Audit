@@ -415,6 +415,8 @@ st.divider()
 # Session State for Modal/Overlay View
 if 'audit_complete' not in st.session_state:
     st.session_state.audit_complete = False
+if 'user_email' not in st.session_state:
+    st.session_state.user_email = ""
 
 with st.container():
     if not st.session_state.audit_complete:
@@ -426,7 +428,7 @@ with st.container():
             st.subheader("1. Setup")
             sc1, sc2 = st.columns(2)
             with sc1: 
-                email_user = st.text_input("Your Email (required):")
+                email_user = st.text_input("Your Email (required):", value=st.session_state.user_email)
             with sc2: 
                 expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
             
@@ -456,6 +458,9 @@ if not st.session_state.audit_complete and 'submit_button' in locals() and submi
     elif not email_user or '@' not in email_user:
         st.error("Please provide a valid email address.")
     else:
+        # Store email for future audits
+        st.session_state.user_email = email_user
+        
         # Extract text from input
         final_text = None
         
