@@ -282,46 +282,47 @@ class IntegrityPDF(FPDF):
         # Red zone
         self.set_fill_color(*self.danger)
         self.rect(20, scale_y, zone1_width, scale_height, 'F')
-        # Label inside
-        self.set_xy(20, scale_y + 5)
-        self.set_font('helvetica', 'B', 9)
+        # Label inside - bigger and centered vertically
+        self.set_xy(20, scale_y + 6)
+        self.set_font('helvetica', 'B', 10)
         self.set_text_color(255, 255, 255)
-        self.cell(zone1_width, 10, '10-24: Critical', 0, 0, 'C')
+        self.cell(zone1_width, 8, '10-24: Critical', 0, 0, 'C')
         
         # Amber zone
         self.set_fill_color(*self.warning)
         self.rect(20 + zone1_width, scale_y, zone2_width, scale_height, 'F')
         # Label inside
-        self.set_xy(20 + zone1_width, scale_y + 5)
-        self.set_font('helvetica', 'B', 9)
+        self.set_xy(20 + zone1_width, scale_y + 6)
+        self.set_font('helvetica', 'B', 10)
         self.set_text_color(255, 255, 255)
-        self.cell(zone2_width, 10, '25-39: Moderate Risk', 0, 0, 'C')
+        self.cell(zone2_width, 8, '25-39: Moderate', 0, 0, 'C')
         
         # Green zone
         self.set_fill_color(*self.success)
         self.rect(20 + zone1_width + zone2_width, scale_y, zone3_width, scale_height, 'F')
         # Label inside
-        self.set_xy(20 + zone1_width + zone2_width, scale_y + 5)
-        self.set_font('helvetica', 'B', 9)
+        self.set_xy(20 + zone1_width + zone2_width, scale_y + 6)
+        self.set_font('helvetica', 'B', 10)
         self.set_text_color(255, 255, 255)
-        self.cell(zone3_width, 10, '40-50: Resilient', 0, 0, 'C')
+        self.cell(zone3_width, 8, '40-50: Resilient', 0, 0, 'C')
         
         # Border around entire scale
         self.set_draw_color(100, 100, 100)
         self.rect(20, scale_y, scale_width, scale_height, 'D')
         
-        # Mark their score
+        # Mark their score with bigger, clearer text
         if total_score >= 10:
             score_position = 20 + ((total_score - 10) / 40) * scale_width
-            arrow_y = scale_y - 8
+            arrow_y = scale_y - 12
             self.set_draw_color(0, 0, 0)
-            self.line(score_position, arrow_y + 5, score_position, scale_y)
-            self.set_xy(score_position - 12, arrow_y - 6)
-            self.set_font('helvetica', 'B', 9)
+            self.set_line_width(1)
+            self.line(score_position, arrow_y + 8, score_position, scale_y)
+            self.set_xy(score_position - 15, arrow_y - 8)
+            self.set_font('helvetica', 'B', 12)
             self.set_text_color(0, 0, 0)
-            self.cell(24, 5, f'Your score: {total_score}', 0, 0, 'C')
+            self.cell(30, 6, f'Your score: {total_score}', 0, 0, 'C')
         
-        self.ln(18)
+        self.ln(25)
         
         # Interpretation box
         if total_score >= 40:
@@ -410,24 +411,30 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
-        # Contact text
-        self.multi_cell(0, 6, "As a Full Professor with over 20 years experience working in higher education, I can help you interpret your results and redesign your assessments for AI resilience.", 1, 'L', True)
+        # Main text in bordered box
+        self.set_fill_color(245, 247, 250)
+        self.set_draw_color(220, 220, 220)
+        contact_text = "As a Full Professor with over 20 years experience working in higher education, I can help you interpret your results and redesign your assessments for AI resilience."
+        self.multi_cell(0, 6, contact_text, 1, 'L', True)
         self.ln(3)
         
-        # Hyperlinks in blue
+        # Strategy call - label and link on same line
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
-        self.set_text_color(0, 0, 255)  # Blue for links
-        self.cell(0, 6, 'Book a strategy call: ', 0, 0)
+        self.set_text_color(*self.text_color_val)
+        self.cell(40, 6, 'Book a strategy call:', 0, 0)
         self.set_font('helvetica', 'U', 10)
-        self.cell(0, 6, 'sam.illingworth@gmail.com', 0, 1, 'L')
-        
-        self.set_x(20)
-        self.set_font('helvetica', 'B', 10)
         self.set_text_color(0, 0, 255)
-        self.cell(0, 6, 'Join the Slow AI community: ', 0, 0)
+        self.cell(0, 6, 'sam.illingworth@gmail.com', 0, 1)
+        
+        # Community - label and link on same line
+        self.set_x(20)
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*self.text_color_val)
+        self.cell(40, 6, 'Join Slow AI:', 0, 0)
         self.set_font('helvetica', 'U', 10)
-        self.cell(0, 6, 'theslowai.substack.com', 0, 1, 'L')
+        self.set_text_color(0, 0, 255)
+        self.cell(0, 6, 'theslowai.substack.com', 0, 1)
         
         self.ln(5)
 
@@ -612,33 +619,61 @@ class IntegrityPDF(FPDF):
         self.multi_cell(0, 6, step4)
         self.ln(8)
         
-        # Timeline
-        self.set_fill_color(*self.bg_cream)
-        self.set_font('helvetica', 'B', 10)
+        # Timeline box
+        self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
-        self.cell(0, 8, ' Suggested Timeline:', 0, 1, 'L', True)
+        self.cell(0, 8, 'Suggested Timeline', 0, 1)
+        self.ln(2)
+        
+        self.set_fill_color(*self.bg_cream)
+        self.set_draw_color(200, 200, 200)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
         timeline = "Week 1: Implement one action from your top priority\nWeek 4: Review impact with students\nWeek 8: Implement second priority action\nEnd of semester: Re-audit and measure improvement"
         self.multi_cell(0, 6, timeline, 1, 'L', True)
         self.ln(8)
     def add_citation_box(self):
-        """Academic citation"""
+        """Academic citation - all in one box"""
         self.check_page_break(30)
         self.set_font('helvetica', 'B', 12)
         self.set_text_color(*self.primary_color)
-        self.cell(0, 8, 'Cite This Framework:', 0, 1)
+        self.cell(0, 8, 'Cite This Framework', 0, 1)
         self.ln(2)
+        
+        # Everything inside one bordered box
+        box_y = self.get_y()
+        self.set_fill_color(250, 250, 250)
+        self.set_draw_color(200, 200, 200)
+        
+        # Citation text
+        self.set_xy(22, box_y + 3)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
-        self.set_fill_color(250, 250, 250)
-        citation_text = 'Illingworth, S. (2026). The Integrity Debt Audit. '
-        self.multi_cell(0, 6, citation_text, 0, 'L', True)
+        self.cell(0, 5, 'Illingworth, S. (2026). The Integrity Debt Audit.', 0, 1)
         
-        self.set_x(20)
+        # URL in blue
+        self.set_x(22)
         self.set_font('helvetica', 'U', 10)
-        self.set_text_color(0, 0, 255)  # Blue for URL
-        self.multi_cell(0, 6, 'https://integrity-debt-audit.streamlit.app/', 1, 'L', True)
+        self.set_text_color(0, 0, 255)
+        self.cell(0, 5, 'https://integrity-debt-audit.streamlit.app/', 0, 1)
+        
+        # Draw box around everything
+        box_height = self.get_y() - box_y + 3
+        self.rect(20, box_y, 170, box_height, 'D')
+        self.set_fill_color(250, 250, 250)
+        self.rect(20, box_y, 170, box_height, 'F')
+        
+        # Redraw text on top
+        self.set_xy(22, box_y + 3)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        self.cell(0, 5, 'Illingworth, S. (2026). The Integrity Debt Audit.', 0, 1)
+        self.set_x(22)
+        self.set_font('helvetica', 'U', 10)
+        self.set_text_color(0, 0, 255)
+        self.cell(0, 5, 'https://integrity-debt-audit.streamlit.app/', 0, 1)
+        
+        self.ln(3)
 
 # 3. Utilities
 def extract_text(uploaded_file):
