@@ -16,7 +16,7 @@ st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", l
 st.markdown("""
     <style>
     .stApp { 
-        background-color: white; 
+        background-color: white;
         color: black; 
     }
     header {visibility: hidden;}
