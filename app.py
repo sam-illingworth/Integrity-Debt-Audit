@@ -16,7 +16,7 @@ st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", l
 st.markdown("""
     <style>
     .stApp { 
-        background-color: white;
+        background-color: white; 
         color: black; 
     }
     header {visibility: hidden;}
@@ -309,11 +309,7 @@ class IntegrityPDF(FPDF):
         self.set_xy(20 + zone1_width + zone2_width, scale_y + 2)
         self.cell(zone3_width, 8, '40-50: Resilient', 0, 0, 'C')
         
-        # Move cursor down
-        self.set_y(scale_y + 12)
-        self.ln(3)
-        
-        # Mark their score with bigger, clearer text
+        # Mark their score with bigger, clearer text ABOVE the scale
         if total_score >= 10:
             # Calculate position based on score
             total_scale_width = 170
@@ -325,22 +321,15 @@ class IntegrityPDF(FPDF):
             self.set_line_width(1)
             self.line(score_position, arrow_y + 8, score_position, scale_y)
             
-            # Draw triangle arrow head
-            self.set_fill_color(0, 0, 0)
-            arrow_size = 3
-            points = [
-                (score_position - arrow_size, scale_y),
-                (score_position + arrow_size, scale_y),
-                (score_position, scale_y + arrow_size)
-            ]
-            
             # Score label
             self.set_xy(score_position - 18, arrow_y - 8)
             self.set_font('helvetica', 'B', 12)
             self.set_text_color(0, 0, 0)
             self.cell(36, 6, f'Your score: {total_score}', 0, 0, 'C')
         
-        self.ln(5)
+        # NOW move cursor to AFTER the scale boxes and add lots of space
+        self.set_y(scale_y + 12)
+        self.ln(12)
         
         # Interpretation box
         if total_score >= 40:
