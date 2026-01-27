@@ -268,7 +268,7 @@ class IntegrityPDF(FPDF):
         self.cell(0, 10, 'Understanding Your Score', 0, 1)
         self.ln(3)
         
-        # Visual scale
+        # Visual scale with clear labels
         scale_y = self.get_y()
         scale_width = 170
         scale_height = 20
@@ -278,37 +278,39 @@ class IntegrityPDF(FPDF):
         zone2_width = (15/41) * scale_width
         zone3_width = (11/41) * scale_width
         
-        # Draw zones with labels INSIDE the boxes
-        # Red zone
+        # STEP 1: Draw all colored rectangles first
         self.set_fill_color(*self.danger)
         self.rect(20, scale_y, zone1_width, scale_height, 'F')
-        # Label inside - bigger and centered vertically
-        self.set_xy(20, scale_y + 6)
-        self.set_font('helvetica', 'B', 10)
-        self.set_text_color(255, 255, 255)
-        self.cell(zone1_width, 8, '10-24: Critical', 0, 0, 'C')
         
-        # Amber zone
         self.set_fill_color(*self.warning)
         self.rect(20 + zone1_width, scale_y, zone2_width, scale_height, 'F')
-        # Label inside
-        self.set_xy(20 + zone1_width, scale_y + 6)
-        self.set_font('helvetica', 'B', 10)
-        self.set_text_color(255, 255, 255)
-        self.cell(zone2_width, 8, '25-39: Moderate', 0, 0, 'C')
         
-        # Green zone
         self.set_fill_color(*self.success)
         self.rect(20 + zone1_width + zone2_width, scale_y, zone3_width, scale_height, 'F')
-        # Label inside
-        self.set_xy(20 + zone1_width + zone2_width, scale_y + 6)
-        self.set_font('helvetica', 'B', 10)
-        self.set_text_color(255, 255, 255)
-        self.cell(zone3_width, 8, '40-50: Resilient', 0, 0, 'C')
         
-        # Border around entire scale
+        # STEP 2: Draw border
         self.set_draw_color(100, 100, 100)
+        self.set_line_width(0.5)
         self.rect(20, scale_y, scale_width, scale_height, 'D')
+        
+        # STEP 3: Now add text labels ON TOP of the colored boxes
+        # Red zone label
+        self.set_xy(20, scale_y + 5)
+        self.set_font('helvetica', 'B', 9)
+        self.set_text_color(255, 255, 255)
+        self.cell(zone1_width, 10, '10-24: Critical', 0, 0, 'C')
+        
+        # Amber zone label
+        self.set_xy(20 + zone1_width, scale_y + 5)
+        self.set_font('helvetica', 'B', 9)
+        self.set_text_color(255, 255, 255)
+        self.cell(zone2_width, 10, '25-39: Moderate', 0, 0, 'C')
+        
+        # Green zone label
+        self.set_xy(20 + zone1_width + zone2_width, scale_y + 5)
+        self.set_font('helvetica', 'B', 9)
+        self.set_text_color(255, 255, 255)
+        self.cell(zone3_width, 10, '40-50: Resilient', 0, 0, 'C')
         
         # Mark their score with bigger, clearer text
         if total_score >= 10:
