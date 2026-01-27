@@ -276,26 +276,42 @@ class IntegrityPDF(FPDF):
         zone2_width = 62
         zone3_width = 46
         
-        # Draw scale using filled cells with borders
+        # Simpler approach: don't fill, just draw bordered cells with text
+        # Then draw colored rectangles BEHIND them
         self.set_xy(20, scale_y)
-        self.set_font('helvetica', 'B', 9)
+        
+        # First draw the colored backgrounds
+        self.set_fill_color(231, 76, 60)  # Red
+        self.rect(20, scale_y, zone1_width, 12, 'F')
+        
+        self.set_fill_color(243, 156, 18)  # Amber
+        self.rect(20 + zone1_width, scale_y, zone2_width, 12, 'F')
+        
+        self.set_fill_color(39, 174, 96)  # Green
+        self.rect(20 + zone1_width + zone2_width, scale_y, zone3_width, 12, 'F')
+        
+        # Now draw borders
+        self.set_draw_color(255, 255, 255)  # White borders for contrast
+        self.set_line_width(1)
+        self.rect(20, scale_y, zone1_width, 12, 'D')
+        self.rect(20 + zone1_width, scale_y, zone2_width, 12, 'D')
+        self.rect(20 + zone1_width + zone2_width, scale_y, zone3_width, 12, 'D')
+        
+        # Now overlay text on top
+        self.set_xy(20, scale_y + 2)
+        self.set_font('helvetica', 'B', 10)
         self.set_text_color(255, 255, 255)
-        self.set_draw_color(100, 100, 100)
-        self.set_line_width(0.3)
+        self.cell(zone1_width, 8, '10-24: Critical', 0, 0, 'C')
         
-        # Red zone
-        self.set_fill_color(*self.danger)
-        self.cell(zone1_width, 10, '10-24: Critical', 1, 0, 'C', True)
+        self.set_xy(20 + zone1_width, scale_y + 2)
+        self.cell(zone2_width, 8, '25-39: Moderate', 0, 0, 'C')
         
-        # Amber zone
-        self.set_fill_color(*self.warning)
-        self.cell(zone2_width, 10, '25-39: Moderate', 1, 0, 'C', True)
+        self.set_xy(20 + zone1_width + zone2_width, scale_y + 2)
+        self.cell(zone3_width, 8, '40-50: Resilient', 0, 0, 'C')
         
-        # Green zone
-        self.set_fill_color(*self.success)
-        self.cell(zone3_width, 10, '40-50: Resilient', 1, 0, 'C', True)
-        
-        self.ln(10)
+        # Move cursor down
+        self.set_y(scale_y + 12)
+        self.ln(3)
         
         # Mark their score with bigger, clearer text
         if total_score >= 10:
