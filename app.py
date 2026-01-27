@@ -259,8 +259,10 @@ class IntegrityPDF(FPDF):
         self.ln(10)
     
     def add_score_interpretation(self, total_score):
-        """Visual scoring scale and interpretation"""
-        self.check_page_break(60)
+        """Visual scoring scale and interpretation - always on new page"""
+        # Always start on fresh page
+        self.add_page()
+        
         self.set_font('helvetica', 'B', 14)
         self.set_text_color(*self.primary_color)
         self.cell(0, 10, 'Understanding Your Score', 0, 1)
@@ -276,28 +278,37 @@ class IntegrityPDF(FPDF):
         zone2_width = (15/41) * scale_width
         zone3_width = (11/41) * scale_width
         
-        # Draw zones
+        # Draw zones with labels INSIDE the boxes
+        # Red zone
         self.set_fill_color(*self.danger)
         self.rect(20, scale_y, zone1_width, scale_height, 'F')
+        # Label inside
+        self.set_xy(20, scale_y + 5)
+        self.set_font('helvetica', 'B', 9)
+        self.set_text_color(255, 255, 255)
+        self.cell(zone1_width, 10, '10-24: Critical', 0, 0, 'C')
+        
+        # Amber zone
         self.set_fill_color(*self.warning)
         self.rect(20 + zone1_width, scale_y, zone2_width, scale_height, 'F')
+        # Label inside
+        self.set_xy(20 + zone1_width, scale_y + 5)
+        self.set_font('helvetica', 'B', 9)
+        self.set_text_color(255, 255, 255)
+        self.cell(zone2_width, 10, '25-39: Moderate Risk', 0, 0, 'C')
+        
+        # Green zone
         self.set_fill_color(*self.success)
         self.rect(20 + zone1_width + zone2_width, scale_y, zone3_width, scale_height, 'F')
+        # Label inside
+        self.set_xy(20 + zone1_width + zone2_width, scale_y + 5)
+        self.set_font('helvetica', 'B', 9)
+        self.set_text_color(255, 255, 255)
+        self.cell(zone3_width, 10, '40-50: Resilient', 0, 0, 'C')
         
-        # Border
+        # Border around entire scale
         self.set_draw_color(100, 100, 100)
         self.rect(20, scale_y, scale_width, scale_height, 'D')
-        
-        # Labels
-        self.set_y(scale_y + scale_height + 3)
-        self.set_font('helvetica', '', 8)
-        self.set_text_color(100, 100, 100)
-        self.set_x(20)
-        self.cell(zone1_width, 5, '10-24: Critical', 0, 0, 'C')
-        self.set_x(20 + zone1_width)
-        self.cell(zone2_width, 5, '25-39: Moderate Risk', 0, 0, 'C')
-        self.set_x(20 + zone1_width + zone2_width)
-        self.cell(zone3_width, 5, '40-50: Resilient', 0, 0, 'C')
         
         # Mark their score
         if total_score >= 10:
@@ -385,8 +396,10 @@ class IntegrityPDF(FPDF):
         self.ln(8)
 
     def add_contact_box(self):
-        """Contact box with no duplication"""
-        self.check_page_break(40)
+        """Contact box with no duplication - keep together on page"""
+        # If not enough room for entire contact section, start new page
+        if self.get_y() + 50 > self.page_break_trigger:
+            self.add_page()
         self.ln(10)
         self.set_x(20)
         self.set_fill_color(*self.bg_cream)
@@ -397,8 +410,25 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
-        contact_txt = "As a Full Professor with over 20 years experience working in higher education, I can help you interpret your results and redesign your assessments for AI resilience.\n\nBook a strategy call: sam.illingworth@gmail.com\nJoin the Slow AI community: theslowai.substack.com"
-        self.multi_cell(0, 6, self.safe_text(contact_txt), 1, 'L', True)
+        # Contact text
+        self.multi_cell(0, 6, "As a Full Professor with over 20 years experience working in higher education, I can help you interpret your results and redesign your assessments for AI resilience.", 1, 'L', True)
+        self.ln(3)
+        
+        # Hyperlinks in blue
+        self.set_x(20)
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(0, 0, 255)  # Blue for links
+        self.cell(0, 6, 'Book a strategy call: ', 0, 0)
+        self.set_font('helvetica', 'U', 10)
+        self.cell(0, 6, 'sam.illingworth@gmail.com', 0, 1, 'L')
+        
+        self.set_x(20)
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(0, 0, 255)
+        self.cell(0, 6, 'Join the Slow AI community: ', 0, 0)
+        self.set_font('helvetica', 'U', 10)
+        self.cell(0, 6, 'theslowai.substack.com', 0, 1, 'L')
+        
         self.ln(5)
 
     def add_category_deep_dive(self, name, score, critique, question, quote, pedagogical_context, actions):
@@ -599,10 +629,16 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.primary_color)
         self.cell(0, 8, 'Cite This Framework:', 0, 1)
         self.ln(2)
-        citation = 'Illingworth, S. (2026). The Integrity Debt Audit. https://integrity-debt-audit.streamlit.app/'
         self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
         self.set_fill_color(250, 250, 250)
-        self.multi_cell(0, 6, citation, 1, 'L', True)
+        citation_text = 'Illingworth, S. (2026). The Integrity Debt Audit. '
+        self.multi_cell(0, 6, citation_text, 0, 'L', True)
+        
+        self.set_x(20)
+        self.set_font('helvetica', 'U', 10)
+        self.set_text_color(0, 0, 255)  # Blue for URL
+        self.multi_cell(0, 6, 'https://integrity-debt-audit.streamlit.app/', 1, 'L', True)
 
 # 3. Utilities
 def extract_text(uploaded_file):
