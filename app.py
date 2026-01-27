@@ -268,63 +268,63 @@ class IntegrityPDF(FPDF):
         self.cell(0, 10, 'Understanding Your Score', 0, 1)
         self.ln(3)
         
-        # Visual scale with clear labels
+        # Visual scale using cells with fills (more reliable than rectangles)
         scale_y = self.get_y()
-        scale_width = 170
-        scale_height = 20
         
         # Three zones: 10-24 (red), 25-39 (amber), 40-50 (green)
-        zone1_width = (15/41) * scale_width
-        zone2_width = (15/41) * scale_width
-        zone3_width = (11/41) * scale_width
+        zone1_width = 62
+        zone2_width = 62
+        zone3_width = 46
         
-        # STEP 1: Draw all colored rectangles first
-        self.set_fill_color(*self.danger)
-        self.rect(20, scale_y, zone1_width, scale_height, 'F')
-        
-        self.set_fill_color(*self.warning)
-        self.rect(20 + zone1_width, scale_y, zone2_width, scale_height, 'F')
-        
-        self.set_fill_color(*self.success)
-        self.rect(20 + zone1_width + zone2_width, scale_y, zone3_width, scale_height, 'F')
-        
-        # STEP 2: Draw border
+        # Draw scale using filled cells with borders
+        self.set_xy(20, scale_y)
+        self.set_font('helvetica', 'B', 9)
+        self.set_text_color(255, 255, 255)
         self.set_draw_color(100, 100, 100)
-        self.set_line_width(0.5)
-        self.rect(20, scale_y, scale_width, scale_height, 'D')
+        self.set_line_width(0.3)
         
-        # STEP 3: Now add text labels ON TOP of the colored boxes
-        # Red zone label
-        self.set_xy(20, scale_y + 5)
-        self.set_font('helvetica', 'B', 9)
-        self.set_text_color(255, 255, 255)
-        self.cell(zone1_width, 10, '10-24: Critical', 0, 0, 'C')
+        # Red zone
+        self.set_fill_color(*self.danger)
+        self.cell(zone1_width, 10, '10-24: Critical', 1, 0, 'C', True)
         
-        # Amber zone label
-        self.set_xy(20 + zone1_width, scale_y + 5)
-        self.set_font('helvetica', 'B', 9)
-        self.set_text_color(255, 255, 255)
-        self.cell(zone2_width, 10, '25-39: Moderate', 0, 0, 'C')
+        # Amber zone
+        self.set_fill_color(*self.warning)
+        self.cell(zone2_width, 10, '25-39: Moderate', 1, 0, 'C', True)
         
-        # Green zone label
-        self.set_xy(20 + zone1_width + zone2_width, scale_y + 5)
-        self.set_font('helvetica', 'B', 9)
-        self.set_text_color(255, 255, 255)
-        self.cell(zone3_width, 10, '40-50: Resilient', 0, 0, 'C')
+        # Green zone
+        self.set_fill_color(*self.success)
+        self.cell(zone3_width, 10, '40-50: Resilient', 1, 0, 'C', True)
+        
+        self.ln(10)
         
         # Mark their score with bigger, clearer text
         if total_score >= 10:
-            score_position = 20 + ((total_score - 10) / 40) * scale_width
+            # Calculate position based on score
+            total_scale_width = 170
+            score_position = 20 + ((total_score - 10) / 40) * total_scale_width
             arrow_y = scale_y - 12
+            
+            # Draw arrow
             self.set_draw_color(0, 0, 0)
             self.set_line_width(1)
             self.line(score_position, arrow_y + 8, score_position, scale_y)
-            self.set_xy(score_position - 15, arrow_y - 8)
+            
+            # Draw triangle arrow head
+            self.set_fill_color(0, 0, 0)
+            arrow_size = 3
+            points = [
+                (score_position - arrow_size, scale_y),
+                (score_position + arrow_size, scale_y),
+                (score_position, scale_y + arrow_size)
+            ]
+            
+            # Score label
+            self.set_xy(score_position - 18, arrow_y - 8)
             self.set_font('helvetica', 'B', 12)
             self.set_text_color(0, 0, 0)
-            self.cell(30, 6, f'Your score: {total_score}', 0, 0, 'C')
+            self.cell(36, 6, f'Your score: {total_score}', 0, 0, 'C')
         
-        self.ln(25)
+        self.ln(5)
         
         # Interpretation box
         if total_score >= 40:
