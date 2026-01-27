@@ -98,17 +98,17 @@ st.markdown("""
 # ==============================================================================
 
 PEDAGOGICAL_CONTEXT = {
-    'Final product weighting': 'Assessment weighting determines whether a student values the journey or just the destination. High-stakes, end-of-term submissions invite Fast AI shortcuts because the pressure to deliver a polished product outweighs the perceived benefit of genuine study. By shifting the focus to formative stages, we reward the human effort of drafting and revising, reducing the incentive to outsource the entire grade to a machine in a moment of panic.',
-    'Iterative documentation': 'AI is designed to hide its tracks and produce a seamless result instantly. Iterative documentation brings the \'messy middle\' of learning into the light by requiring students to show their intellectual scaffolding. This Slow AI approach makes automation difficult because a student must prompt an AI to simulate errors, revisions, and false starts over several weeks. It prioritises the cognitive struggle of development over the aesthetic perfection of a final PDF.',
-    'Contextual specificity': 'Large Language Models are trained on vast, generic datasets and excel at synthesising high-level theory found in textbooks. They struggle when a task is tethered to a specific time, a unique classroom debate, or a hyper-local community event. Increasing contextual specificity ensures that a student cannot rely on the general knowledge of an AI. It invites them to engage with their immediate environment and the specific nuances of your teaching.',
-    'Reflective criticality': 'Reflective writing is often treated as a checkbox exercise, which AI easily mimics using a generic, professionalised persona. True Slow AI reflection requires a deep, subjective bridge between theoretical concepts and personal experience. When we ask for genuine criticality, we ask for the one thing an AI cannot provide: a lived perspective. This ensures that the student is not just describing a process but is synthesising how that process changed their own understanding and values.',
-    'Temporal friction': 'Fast AI thrives on speed and the ability to bypass the traditional passage of time. If an assessment can be finished in a single night, it is inherently vulnerable to automation. Temporal friction introduces intentional delays, such as longitudinal data collection or mandated peer-review cycles, which make \'sprinting\' impossible. This friction protects the learning process by ensuring that students must sit with the material and allow ideas to gestate over weeks rather than hours.',
-    'Multimodal evidence': 'Text remains the primary language of current AI models and is therefore the easiest medium to automate. Requiring multimodal evidence, such as audio, physical models, or hand-drawn sketches, encourages students out of the textbox and into more complex forms of expression. This Slow AI strategy reclaims pedagogical integrity by making the assessment multi-dimensional. It ensures that the student must physically or vocally engage with the content, providing a layer of human authenticity that a Word document lacks.',
-    'Explicit AI interrogation': 'Ignoring AI only encourages covert and uncritical use. Explicit AI interrogation brings the tool into the classroom as a subject to be deconstructed rather than a ghost to be feared. By requiring students to critique AI-generated outputs, we move from passive automation to active analysis. This approach teaches students to recognise the biases and hallucinations of Fast AI and reaffirms the necessity of human oversight and subject expertise in an automated age.',
-    'Real-time defence': 'Live interaction is the ultimate proof of human cognitive labour because it requires spontaneous synthesis and unscripted thought. Whilst AI can draft a perfect presentation script, it cannot navigate a live Q&A session or justify methodological choices in real time. Introducing a Slow AI defence ensures that the student truly owns their work. It shifts the power dynamic from surveillance to dialogue, where the marker becomes a conversational partner rather than a remote auditor.',
-    'Social and collaborative labour': 'Automation is often a solitary act. Learning is most effective when it involves the social friction of collaborating with others. Solitary assessments are high-risk because there is no human witness to the learning process. By integrating verified group work and peer-to-peer feedback, we create a community of accountability. This Slow AI approach ensures that students learn through dialogue and collision with different ideas, making the outsourcing of the task to a machine much harder to hide.',
-    'Data recency': 'AI models are historical by nature because they rely on training data that is months or years old. Engaging with the present creates a data barrier that synthetic text struggles to cross without significant hallucinations. Using data recency ensures that assessments are tethered to the current world. This Slow AI tactic requires students to apply theory to headlines, datasets, or events that emerged within days of the deadline, proving they are active participants in a living curriculum.'
-}
+    'Final product weighting': 'When all the marks sit on a single final deadline, students feel pressure to deliver a polished product at any cost. That makes AI tempting. If you spread the marks across drafts, feedback responses, and planning stages, you reward the actual learning journey. Students cannot fake sustained engagement over weeks. The process becomes more valuable than the final polish.',
+    'Iterative documentation': 'AI tools hide their tracks. They produce seamless, polished text instantly. Real human learning is messy. It involves false starts, abandoned ideas, and gradual improvements. When you ask students to show this messiness through lab books, draft annotations, or revision logs, you make AI automation much harder. The struggle to develop an idea cannot be faked overnight.',
+    'Contextual specificity': 'AI models train on generic textbook knowledge. They excel at broad theoretical questions. They struggle with specific contexts like your classroom debate last Tuesday, the local council decision students witnessed, or the guest speaker who challenged conventional thinking. When you anchor assessments in unique moments and places, AI cannot replicate that specificity without the student having actually been there.',
+    'Reflective criticality': 'Generic professional reflection is easy to automate. AI can produce convincing statements like \'I learned the importance of teamwork.\' But genuine reflection requires vulnerability. It asks students to describe specific moments of confusion, physical sensations of discomfort, and how their values shifted. AI cannot fabricate lived experience. Only humans can connect theory to what it felt like to fail and try again.',
+    'Temporal friction': 'If an assessment can be completed in one night, it will be. AI thrives on speed. Building in time delays makes automation much harder. Longitudinal studies require data collection over weeks. Peer review cycles force students to wait for feedback before progressing. Sequential deadlines prevent sprinting. When time itself becomes part of the assessment structure, students must engage with the material over the long term.',
+    'Multimodal evidence': 'Text is AI\'s native format. Word documents are trivially easy to automate. But when you ask for a hand-drawn concept map photographed and annotated, a 3-minute audio reflection, or a physical model presented in class, you move students beyond the textbox. These modes require different types of engagement. They add layers of human authenticity that pure text cannot match.',
+    'Explicit AI interrogation': 'Banning AI does not work. Students use it anyway. Instead, bring the tool into the classroom as something to study and critique. Ask students to generate AI content, then spend the assessment identifying its errors, biases, and missing nuance. This transforms AI from a hidden shortcut into the object of critical analysis. It teaches students that human expertise matters because AI fails in predictable ways.',
+    'Real-time defence': 'Live conversation reveals understanding in ways written text cannot. AI can draft perfect scripts. It cannot handle spontaneous questions about methodology. It cannot justify choices on the spot. A 10-minute viva, a live presentation with Q&A, or peer critique sessions force students to think aloud. This shifts the dynamic from surveillance to dialogue. Authentic ownership becomes visible through unscripted speech.',
+    'Social and collaborative labour': 'Automation is solitary. Genuine learning thrives in groups. When students must explain their thinking to peers, respond to challenges, give feedback, and negotiate ideas together, they create witnesses to their process. Verified group work, observed collaboration, and graded peer feedback make it much harder to outsource the task to AI. Social friction creates accountability.',
+    'Data recency': 'AI training data is always historical. It knows the past well but struggles with the present. When you ask students to analyse this morning\'s headlines, this week\'s policy change, or datasets released in the last fortnight, you create a knowledge barrier. AI will hallucinate or guess. Students must engage with current events. This tethers assessments to the living world rather than static textbook content.'
+}}
 
 IMPROVEMENT_ACTIONS = {
     'Final product weighting': [
@@ -257,6 +257,85 @@ class IntegrityPDF(FPDF):
             self.set_text_color(*self.text_color_val)
             self.multi_cell(0, 8, self.safe_text(imp))
         self.ln(10)
+    
+    def add_score_interpretation(self, total_score):
+        """Visual scoring scale and interpretation"""
+        self.check_page_break(60)
+        self.set_font('helvetica', 'B', 14)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 10, 'Understanding Your Score', 0, 1)
+        self.ln(3)
+        
+        # Visual scale
+        scale_y = self.get_y()
+        scale_width = 170
+        scale_height = 20
+        
+        # Three zones: 10-24 (red), 25-39 (amber), 40-50 (green)
+        zone1_width = (15/41) * scale_width
+        zone2_width = (15/41) * scale_width
+        zone3_width = (11/41) * scale_width
+        
+        # Draw zones
+        self.set_fill_color(*self.danger)
+        self.rect(20, scale_y, zone1_width, scale_height, 'F')
+        self.set_fill_color(*self.warning)
+        self.rect(20 + zone1_width, scale_y, zone2_width, scale_height, 'F')
+        self.set_fill_color(*self.success)
+        self.rect(20 + zone1_width + zone2_width, scale_y, zone3_width, scale_height, 'F')
+        
+        # Border
+        self.set_draw_color(100, 100, 100)
+        self.rect(20, scale_y, scale_width, scale_height, 'D')
+        
+        # Labels
+        self.set_y(scale_y + scale_height + 3)
+        self.set_font('helvetica', '', 8)
+        self.set_text_color(100, 100, 100)
+        self.set_x(20)
+        self.cell(zone1_width, 5, '10-24: Critical', 0, 0, 'C')
+        self.set_x(20 + zone1_width)
+        self.cell(zone2_width, 5, '25-39: Moderate Risk', 0, 0, 'C')
+        self.set_x(20 + zone1_width + zone2_width)
+        self.cell(zone3_width, 5, '40-50: Resilient', 0, 0, 'C')
+        
+        # Mark their score
+        if total_score >= 10:
+            score_position = 20 + ((total_score - 10) / 40) * scale_width
+            arrow_y = scale_y - 8
+            self.set_draw_color(0, 0, 0)
+            self.line(score_position, arrow_y + 5, score_position, scale_y)
+            self.set_xy(score_position - 12, arrow_y - 6)
+            self.set_font('helvetica', 'B', 9)
+            self.set_text_color(0, 0, 0)
+            self.cell(24, 5, f'Your score: {total_score}', 0, 0, 'C')
+        
+        self.ln(18)
+        
+        # Interpretation box
+        if total_score >= 40:
+            title = 'Strong Position: Keep Building'
+            message = 'Your assessment shows good resistance to AI automation. Focus on your few remaining vulnerabilities and share your practices with colleagues.'
+            box_color = self.success
+        elif total_score >= 25:
+            title = 'Moderate Risk: Redesign Recommended'
+            message = 'Your assessment has protective features but significant gaps remain. Students can partially automate your work. Prioritise the improvements below, starting with your lowest-scoring categories.'
+            box_color = self.warning
+        else:
+            title = 'High Risk: Urgent Action Needed'
+            message = 'Your assessment can be largely automated by AI with minimal human input. This threatens the value of your qualification. Begin redesigning immediately, focusing on your three weakest categories.'
+            box_color = self.danger
+        
+        self.set_fill_color(*box_color)
+        self.set_text_color(255, 255, 255)
+        self.set_font('helvetica', 'B', 11)
+        self.cell(0, 8, f' {title}', 0, 1, 'L', True)
+        
+        self.set_fill_color(250, 250, 250)
+        self.set_text_color(*self.text_color_val)
+        self.set_font('helvetica', '', 10)
+        self.multi_cell(0, 6, message, 1, 'L', True)
+        self.ln(8)
 
     def add_category(self, name, score, critique, question, quote):
         # Anchor check to prevent orphaned headlines
@@ -306,23 +385,21 @@ class IntegrityPDF(FPDF):
         self.ln(8)
 
     def add_contact_box(self):
+        """Contact box with no duplication"""
         self.check_page_break(40)
         self.ln(10)
         self.set_x(20)
         self.set_fill_color(*self.bg_cream)
         self.set_text_color(*self.primary_color)
         self.set_font('helvetica', 'B', 12)
-        self.cell(0, 10, " Strategic Consultancy & Bespoke Support", 0, 1, 'L', True)
+        self.cell(0, 10, ' Need Support with Implementation?', 0, 1, 'L', True)
         self.set_fill_color(245, 247, 250)
         self.set_text_color(*self.text_color_val)
         self.set_font('helvetica', '', 10)
         self.set_x(20)
-        contact_txt = "As a Full Professor with over 20 years experience of working in higher education, I can help interpret your diagnostic results to develop AI-resilient assessments and curricula.\n\nBook a strategy call to plan your curriculum redesign: sam.illingworth@gmail.com\n\nJoin the Slow AI community: theslowai.substack.com"
+        contact_txt = "As a Full Professor with over 20 years experience working in higher education, I can help you interpret your results and redesign your assessments for AI resilience.\n\nBook a strategy call: sam.illingworth@gmail.com\nJoin the Slow AI community: theslowai.substack.com"
         self.multi_cell(0, 6, self.safe_text(contact_txt), 1, 'L', True)
         self.ln(5)
-        self.set_x(20)
-        self.set_font('helvetica', 'B', 10)
-        self.cell(0, 6, "Email: sam.illingworth@gmail.com | Substack: https://samillingworth.substack.com/", 0, 1, 'C')
 
     def add_category_deep_dive(self, name, score, critique, question, quote, pedagogical_context, actions):
         """Enhanced category with pedagogical context and actions - keeps section together on page"""
@@ -362,11 +439,19 @@ class IntegrityPDF(FPDF):
         self.multi_cell(0, 6, self.safe_text(critique))
         self.ln(3)
         
-        # Pedagogical theory explaining WHY this category matters
+        # Pedagogical theory connected to their score
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
-        self.cell(0, 6, 'Why This Category Matters:', 0, 1)
+        
+        if score >= 4:
+            theory_header = 'Why This Strength Matters:'
+        elif score == 3:
+            theory_header = 'Why Addressing This Gap Matters:'
+        else:
+            theory_header = 'Why This Vulnerability Is Critical:'
+        
+        self.cell(0, 6, theory_header, 0, 1)
         self.set_x(20)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
@@ -378,7 +463,7 @@ class IntegrityPDF(FPDF):
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
-        self.cell(0, 6, 'How to Improve This Assessment:', 0, 1)
+        self.cell(0, 6, 'Practical Steps to Strengthen This:', 0, 1)
         for i, action in enumerate(actions, 1):
             self.set_x(20)
             self.set_font('helvetica', '', 10)
@@ -392,7 +477,7 @@ class IntegrityPDF(FPDF):
         self.set_x(20)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
-        self.cell(0, 6, 'Question for Reflection:', 0, 1)
+        self.cell(0, 6, 'Discuss With Your Team:', 0, 1)
         self.set_x(20)
         self.set_font('helvetica', 'I', 10)
         self.set_text_color(*self.text_color_val)
@@ -403,7 +488,7 @@ class IntegrityPDF(FPDF):
         self.set_x(20)
         self.set_font('helvetica', 'B', 9)
         self.set_text_color(*self.primary_color)
-        self.cell(0, 6, 'Evidence from Your Assessment:', 0, 1)
+        self.cell(0, 6, 'Where We Found This in Your Brief:', 0, 1)
         self.set_x(20)
         self.set_font('courier', '', 9)
         self.set_text_color(80, 80, 80)
@@ -440,6 +525,73 @@ class IntegrityPDF(FPDF):
                 self.multi_cell(0, 6, self.safe_text(action))
             self.ln(5)
 
+
+    
+    def add_next_steps(self):
+        """Practical guidance on what to do with this report"""
+        self.check_page_break(70)
+        self.add_page()
+        self.set_font('helvetica', 'B', 16)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 10, 'What To Do Next', 0, 1)
+        self.ln(3)
+        
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        intro = "You now have a detailed diagnostic of your assessment. Here is how to use this report effectively:"
+        self.multi_cell(0, 6, intro)
+        self.ln(5)
+        
+        # Step 1
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 8, 'Step 1: Review Your Priority Actions (Previous Page)', 0, 1)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        step1 = "Focus on the \'START HERE\' priority first. Pick one concrete action from that category and implement it in your next assessment iteration. Do not try to fix everything at once."
+        self.multi_cell(0, 6, step1)
+        self.ln(4)
+        
+        # Step 2
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 8, 'Step 2: Share This Report', 0, 1)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        step2 = "Bring this PDF to your next curriculum planning meeting. Use the reflection questions in each category to start conversations with colleagues about assessment redesign. The evidence quotes help justify changes to leadership."
+        self.multi_cell(0, 6, step2)
+        self.ln(4)
+        
+        # Step 3
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 8, 'Step 3: Re-Audit After Changes', 0, 1)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        step3 = "After implementing improvements, run your revised assessment through the tool again at https://integrity-debt-audit.streamlit.app/ to measure progress. Track your score over time."
+        self.multi_cell(0, 6, step3)
+        self.ln(4)
+        
+        # Step 4
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 8, 'Step 4: Get Support If Needed', 0, 1)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        step4 = "If you are facing institutional resistance or need help prioritising across multiple modules, consider booking a strategy call. I work with departments to implement systematic curriculum redesign."
+        self.multi_cell(0, 6, step4)
+        self.ln(8)
+        
+        # Timeline
+        self.set_fill_color(*self.bg_cream)
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 8, ' Suggested Timeline:', 0, 1, 'L', True)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        timeline = "Week 1: Implement one action from your top priority\nWeek 4: Review impact with students\nWeek 8: Implement second priority action\nEnd of semester: Re-audit and measure improvement"
+        self.multi_cell(0, 6, timeline, 1, 'L', True)
+        self.ln(8)
     def add_citation_box(self):
         """Academic citation"""
         self.check_page_break(30)
@@ -921,8 +1073,14 @@ if st.session_state.audit_complete:
             actions
         )
     
+    # Add score interpretation with visual scale
+    pdf.add_score_interpretation(total_score)
+    
     # Add action plan page
     pdf.add_action_plan(final_audit_results)
+    
+    # Add next steps guidance
+    pdf.add_next_steps()
     
     # Add citation
     pdf.add_citation_box()
