@@ -108,7 +108,7 @@ PEDAGOGICAL_CONTEXT = {
     'Real-time defence': 'Live conversation reveals understanding in ways written text cannot. AI can draft perfect scripts. It cannot handle spontaneous questions about methodology. It cannot justify choices on the spot. A 10-minute viva, a live presentation with Q&A, or peer critique sessions force students to think aloud. This shifts the dynamic from surveillance to dialogue. Authentic ownership becomes visible through unscripted speech.',
     'Social and collaborative labour': 'Automation is solitary. Genuine learning thrives in groups. When students must explain their thinking to peers, respond to challenges, give feedback, and negotiate ideas together, they create witnesses to their process. Verified group work, observed collaboration, and graded peer feedback make it much harder to outsource the task to AI. Social friction creates accountability.',
     'Data recency': 'AI training data is always historical. It knows the past well but struggles with the present. When you ask students to analyse this morning\'s headlines, this week\'s policy change, or datasets released in the last fortnight, you create a knowledge barrier. AI will hallucinate or guess. Students must engage with current events. This tethers assessments to the living world rather than static textbook content.'
-}}
+}
 
 IMPROVEMENT_ACTIONS = {
     'Final product weighting': [
