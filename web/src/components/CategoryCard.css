@@ -1,0 +1,149 @@
+.category-card {
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.category-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #ddd;
+}
+
+.category-card.green {
+  border-left: 4px solid #27ae60;
+}
+
+.category-card.orange {
+  border-left: 4px solid #f39c12;
+}
+
+.category-card.red {
+  border-left: 4px solid #e74c3c;
+}
+
+.category-header {
+  width: 100%;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  transition: background 0.2s;
+}
+
+.category-header:hover {
+  background: #f0f5f4;
+}
+
+.category-info {
+  flex: 1;
+  text-align: left;
+}
+
+.category-info h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2d4d4a;
+  margin-bottom: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.status-badge.green {
+  background: rgba(39, 174, 96, 0.2);
+  color: #27ae60;
+}
+
+.status-badge.orange {
+  background: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+}
+
+.status-badge.red {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+.toggle-icon {
+  display: flex;
+  align-items: center;
+  color: #999;
+  transition: transform 0.2s;
+}
+
+.category-card.expanded .toggle-icon {
+  transform: rotate(180deg);
+}
+
+.category-content {
+  padding: 1.5rem;
+  border-top: 1px solid #e9ecef;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+.content-section {
+  margin-bottom: 1.5rem;
+}
+
+.content-section:last-child {
+  margin-bottom: 0;
+}
+
+.content-section h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #2d4d4a;
+  margin-bottom: 0.5rem;
+}
+
+.content-section p {
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.content-section blockquote {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-left: 3px solid #2d4d4a;
+  border-radius: 4px;
+  color: #555;
+  font-style: italic;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .category-card {
+    border-left-width: 3px;
+  }
+
+  .category-header {
+    padding: 1rem;
+  }
+
+  .category-content {
+    padding: 1rem;
+  }
+}
