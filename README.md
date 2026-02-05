@@ -27,11 +27,11 @@ Upload an **assessment brief** as a PDF or Word document. This is the document y
 
 Two example assessment briefs are included in the `/examples` folder:
 
-1. **[vulnerable-essay-brief.md](examples/vulnerable-essay-brief.md)** - A typical essay assignment that scores poorly (40-50, Critical Integrity Failure). Demonstrates an assessment highly vulnerable to AI automation.
+1. **[vulnerable-essay-brief.pdf](examples/vulnerable-essay-brief.pdf)** - A typical essay assignment that scores poorly (40-50, Critical Integrity Failure). Demonstrates an assessment highly vulnerable to AI automation.
 
-2. **[resilient-assessment-brief.md](examples/resilient-assessment-brief.md)** - A portfolio and viva assessment that scores well (12-18, Pedagogical Sovereignty). Demonstrates an assessment designed to resist AI automation.
+2. **[resilient-assessment-brief.pdf](examples/resilient-assessment-brief.pdf)** - A portfolio and viva assessment that scores well (12-18, Pedagogical Sovereignty). Demonstrates an assessment designed to resist AI automation.
 
-Download either file, convert to PDF or Word, and upload to the tool to see how the audit works.
+Download either PDF and upload directly to the tool to see how the audit works.
 
 ## Create Your Own Test
 
