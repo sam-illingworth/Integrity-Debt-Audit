@@ -2,7 +2,7 @@
 
 **"If a machine can pass your assessment, the failure lies in the curriculum design, not the student's character."**
 
-[**Try the Audit Tool**](https://integrity-debt-audit.streamlit.app/) | [**Download the Strategy Guide**](https://samillingworth.gumroad.com/l/integrity-debt-audit) | [**Contact for Consultancy**](mailto:sam.illingworth@gmail.com)
+[**Try the Audit Tool**](https://integrity-debt-audit.streamlit.app/) | [**Contact for Consultancy**](mailto:sam.illingworth@gmail.com)
 
 ---
 
@@ -130,6 +130,5 @@ Each category is scored from 1 (Slow AI/Resilient) to 5 (Fast AI/Vulnerable), wi
 
 This tool is a proof-of-concept for the **Integrity Debt** framework. High scores indicate high vulnerability, threatening institutional reputation and pedagogical validity.
 
-* **Strategy Guide**: [Download the full guide](https://samillingworth.gumroad.com/l/integrity-debt-audit)
 * **Consultancy**: Contact [sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com) for curriculum audit and redesign workshops.
 * **Slow AI**: [theslowai.substack.com](https://theslowai.substack.com) - Critical AI literacy for educators and professionals.
