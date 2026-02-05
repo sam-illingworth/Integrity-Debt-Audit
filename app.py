@@ -686,31 +686,45 @@ class IntegrityPDF(FPDF):
 def extract_text(uploaded_file):
     """Extract text from PDF or DOCX files with better error handling"""
     text = ""
+    filename = uploaded_file.name.lower()
+
+    # Check for unsupported .doc format
+    if filename.endswith('.doc') and not filename.endswith('.docx'):
+        st.error("Older .doc format is not supported. Please open the file in Word, use 'Save As' to save as .docx, and re-upload.")
+        return None
+
     try:
-        if uploaded_file.name.endswith('.pdf'):
+        if filename.endswith('.pdf'):
             reader = PdfReader(uploaded_file)
-            for page in reader.pages: 
+            page_count = len(reader.pages)
+            for page in reader.pages:
                 text += page.extract_text() or ""
-        elif uploaded_file.name.endswith('.docx'):
+
+            # Check for likely scanned PDF
+            if not text.strip() and page_count > 0:
+                st.error("This PDF appears to be scanned or image-based. The tool cannot read image-based documents. Please use a text-based PDF, or copy the text manually and use 'Paste Text' instead.")
+                return None
+
+        elif filename.endswith('.docx'):
             doc = Document(uploaded_file)
-            for para in doc.paragraphs: 
-                if para.text.strip(): 
+            for para in doc.paragraphs:
+                if para.text.strip():
                     text += para.text + "\n"
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
-                        if cell.text.strip(): 
+                        if cell.text.strip():
                             text += cell.text + " "
                     text += "\n"
-        
+
         if not text.strip():
-            st.error("File appears to be empty or unreadable.")
+            st.error("File appears to be empty or could not be read. If this is a PDF, it may be scanned or image-based.")
             return None
-            
-    except Exception as e: 
+
+    except Exception as e:
         st.error(f"Extraction error: {e}")
         return None
-    
+
     return text
 
 def scrape_url(url):
@@ -720,21 +734,42 @@ def scrape_url(url):
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         response = requests.get(url, timeout=10, headers=headers, allow_redirects=True)
         response.raise_for_status()  # Raise error for bad status codes
-        
+
         soup = BeautifulSoup(response.text, 'html.parser')
-        
+        page_text_lower = response.text.lower()
+
+        # Check for common login page indicators
+        login_indicators = ['sign in', 'log in', 'login', 'authentication required', 'access denied', 'please log in', 'sso', 'single sign-on']
+        vle_indicators = ['moodle', 'canvas', 'blackboard', 'brightspace', 'sharepoint']
+
+        if any(indicator in page_text_lower for indicator in login_indicators):
+            is_vle = any(vle in page_text_lower for vle in vle_indicators)
+            if is_vle:
+                return "Error: This appears to be a login-protected VLE page (Moodle, Canvas, Blackboard, etc.). The tool cannot access authenticated pages. Please copy the assessment text from your VLE and use 'Paste Text' instead."
+            else:
+                return "Error: This page appears to require login. The tool cannot access authenticated pages. Please copy the text manually and use 'Paste Text' instead."
+
         # Remove script and style elements
         for script in soup(["script", "style"]):
             script.decompose()
-            
+
         tags = soup.find_all(['p', 'h1', 'h2', 'h3', 'li', 'td'])
         text = "\n".join([t.get_text().strip() for t in tags if t.get_text().strip()])
-        
+
         if not text:
-            return "Error: Could not extract text from URL"
-            
+            return "Error: Could not extract text from URL. The page may use JavaScript to load content. Please copy the text manually and use 'Paste Text' instead."
+
         return text
-    except Exception as e: 
+    except requests.exceptions.Timeout:
+        return "Error: The request timed out. The page may be slow or unavailable. Please try again or copy the text manually."
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 403:
+            return "Error: Access forbidden. This page may require login or block automated access. Please copy the text manually and use 'Paste Text' instead."
+        elif e.response.status_code == 404:
+            return "Error: Page not found. Please check the URL is correct."
+        else:
+            return f"Error: HTTP {e.response.status_code}. Please try copying the text manually."
+    except Exception as e:
         return f"Error: {str(e)}"
 
 def clean_json_string(raw_string):
@@ -905,6 +940,11 @@ if not st.session_state.audit_complete and 'submit_button' in locals() and submi
         elif len(final_text) < 100:
             st.error("Assessment content is too short. Please provide a complete assessment brief.")
         else:
+            # Warn about short content but still proceed
+            if len(final_text) < 800:
+                word_count = len(final_text.split())
+                st.warning(f"Your assessment brief is quite short (~{word_count} words). Results may be more accurate with fuller details including assessment criteria, submission requirements, and any process elements (drafts, presentations, etc.).")
+
             with st.spinner("Analyzing assessment against Integrity Debt framework..."):
                 try:
                     target = discover_model(api_key)
