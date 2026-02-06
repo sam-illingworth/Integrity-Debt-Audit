@@ -212,6 +212,7 @@ class IntegrityPDF(FPDF):
             self.add_page()
 
     def add_summary(self, actual, score, improvements, doc_context):
+        score = int(score) if not isinstance(score, int) else score
         self.set_x(20)
         self.set_font('helvetica', 'B', 16)
         self.set_text_color(*self.primary_color)
@@ -357,8 +358,9 @@ class IntegrityPDF(FPDF):
         self.ln(8)
 
     def add_category(self, name, score, critique, question, quote):
+        score = int(score) if not isinstance(score, int) else score
         # Anchor check to prevent orphaned headlines
-        self.check_page_break(60) 
+        self.check_page_break(60)
         # HIGH scores (4-5) are GOOD (green), LOW (1-2) are BAD (red)
         accent = self.success if score >= 4 else self.warning if score == 3 else self.danger
         status = "RESILIENT" if score >= 4 else "MODERATE" if score == 3 else "VULNERABLE"
@@ -447,6 +449,7 @@ class IntegrityPDF(FPDF):
 
     def add_category_deep_dive(self, name, score, critique, question, quote, pedagogical_context, actions):
         """Enhanced category with pedagogical context and actions - keeps section together on page"""
+        score = int(score) if not isinstance(score, int) else score
         # Calculate approximate height needed for entire section
         context_lines = len(pedagogical_context) // 90  # Approx chars per line
         actions_lines = len(actions) * 2  # Each action ~2 lines
