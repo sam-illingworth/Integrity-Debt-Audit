@@ -833,7 +833,7 @@ This diagnostic evaluates your assessment brief across **10 evidence-based categ
 
 ### What do you need?
 
-Upload or paste an **assessment brief** from your course. The more detail the better: task description, learning outcomes, marking criteria, and submission requirements. You can upload a PDF, a Word document (.docx), paste text directly, or provide a public URL.
+Upload or paste an **assessment brief** from your course. The more detail the better: task description, learning outcomes, marking criteria, and submission requirements will all improve the accuracy of your results. You can upload a PDF, a Word document (.docx), paste text directly, or provide a public URL.
 
 **Want to try it first?** Download one of these example briefs:
 - [Vulnerable essay brief (PDF)](https://raw.githubusercontent.com/sam-illingworth/Integrity-Debt-Audit/main/examples/vulnerable-essay-brief.pdf) — a traditional assignment likely to score poorly
@@ -862,19 +862,6 @@ with st.expander("Need support with implementation?"):
 **Book a strategy call to plan your curriculum redesign:** [sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com)
 
 Join the Slow AI community for ongoing insights: [theslowai.substack.com](https://theslowai.substack.com)""")
-
-st.divider()
-
-c1, c2 = st.columns([2, 1])
-with c1:
-    st.markdown("""
-    ### Pre-Audit Checklist
-    Include the task description, learning outcomes, and submission formats for accurate results.
-    """)
-with c2:
-    st.info("**The Scoring System**\n* 🟢 4-5: Resilient\n* 🟡 3: Moderate\n* 🔴 1-2: Vulnerable")
-
-st.divider()
 
 # Session State for Modal/Overlay View
 if 'audit_complete' not in st.session_state:
@@ -1142,14 +1129,16 @@ if st.session_state.audit_complete:
     """, unsafe_allow_html=True)
     
     st.subheader(f"Diagnostic Focus: {ctx}")
-    
-    col1, col2 = st.columns(2)
+
+    col1, col2, col3 = st.columns(3)
     with col1:
         # HIGH total score (40-50) = GOOD (green), LOW (10-20) = BAD (red)
         score_color = "🟢" if total_score >= 40 else "🟡" if total_score >= 25 else "🔴"
         st.metric("Integrity Score", f"{score_color} {total_score}/50")
     with col2:
         st.metric("AI Susceptibility", susceptibility.split('(')[0].strip())
+    with col3:
+        st.info("**Scoring Key**\n* 🟢 4-5: Resilient\n* 🟡 3: Moderate\n* 🔴 1-2: Vulnerable")
     
     st.markdown("""
         <p style='color: #856404; background-color: #fff3cd; padding: 12px; border-radius: 4px; border-left: 4px solid #ffc107;'>
