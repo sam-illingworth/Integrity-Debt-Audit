@@ -832,6 +832,14 @@ The **Integrity Debt Audit** helps you identify if your assessments can be easil
 
 This diagnostic evaluates your assessment brief across **10 evidence-based categories** that distinguish human learning from AI automation. Each category is scored from 1 (easily automated) to 5 (resilient to AI), giving you a total integrity score out of 50.
 
+### What do you need?
+
+Upload or paste an **assessment brief** from your course. The more detail the better: task description, learning outcomes, marking criteria, and submission requirements. You can upload a PDF, a Word document (.docx), paste text directly, or provide a public URL.
+
+**Want to try it first?** Download one of these example briefs:
+- [Vulnerable essay brief (PDF)](https://raw.githubusercontent.com/sam-illingworth/Integrity-Debt-Audit/main/examples/vulnerable-essay-brief.pdf) — a traditional assignment likely to score poorly
+- [Resilient assessment brief (PDF)](https://raw.githubusercontent.com/sam-illingworth/Integrity-Debt-Audit/main/examples/resilient-assessment-brief.pdf) — a redesigned assessment built to resist AI automation
+
 ### Why use this audit?
 
 - **Stop chasing ghosts with AI detectors** – They don't work reliably, and students know how to evade them
@@ -874,8 +882,6 @@ st.divider()
 # Session State for Modal/Overlay View
 if 'audit_complete' not in st.session_state:
     st.session_state.audit_complete = False
-if 'user_email' not in st.session_state:
-    st.session_state.user_email = ""
 
 with st.container():
     if not st.session_state.audit_complete:
@@ -885,11 +891,7 @@ with st.container():
         
         with st.form("audit_form"):
             st.subheader("1. Setup")
-            sc1, sc2 = st.columns(2)
-            with sc1: 
-                email_user = st.text_input("Your Email (required):", value=st.session_state.user_email)
-            with sc2: 
-                expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
+            expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
             
             st.markdown("---")  # Visual separator
             
@@ -914,12 +916,7 @@ if not st.session_state.audit_complete and 'submit_button' in locals() and submi
     # Validation
     if not api_key:
         st.error("API key configuration missing. Please contact the administrator.")
-    elif not email_user or '@' not in email_user:
-        st.error("Please provide a valid email address.")
     else:
-        # Store email for future audits
-        st.session_state.user_email = email_user
-        
         # Extract text from input
         final_text = None
         
