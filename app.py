@@ -11,7 +11,7 @@ import re
 from google.api_core import exceptions
 
 # 1. Configuration and Mobile CSS
-st.set_page_config(page_title="Integrity Debt Diagnostic", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="Integrity Debt Audit", page_icon="⚖️", layout="wide")
 
 st.markdown("""
     <style>
@@ -822,7 +822,7 @@ CATEGORY_DESCRIPTIONS = {
 }
 
 # 4. Interface
-st.title("Integrity Debt Diagnostic")
+st.title("Integrity Debt Audit")
 st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
 
 st.markdown("""
