@@ -5,7 +5,7 @@
 [**Try the Audit Tool**](https://integrity-debt-audit.streamlit.app/) | [**Contact for Consultancy**](mailto:sam.illingworth@gmail.com)
 
 ---
-
+![Integrity Debt Audit Interface](screenshot.png)
 
 
 The **Integrity Debt Audit** is an AI-powered tool for Higher Education professionals to audit assessment briefs against the **10 Categories of Integrity Debt** (Illingworth, 2026). It identifies vulnerabilities to AI automation and provides analytical critiques to support curriculum redesign.
