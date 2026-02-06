@@ -790,7 +790,7 @@ def discover_model(api_key):
         models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
         flash = [m for m in models if 'flash' in m.lower()]
         return flash[0] if flash else models[0]
-    except:
+    except Exception:
         return 'models/gemini-1.5-flash'
 
 # CORRECT CATEGORIES FROM THE PDF
@@ -840,31 +840,29 @@ Upload or paste an **assessment brief** from your course. The more detail the be
 - [Vulnerable essay brief (PDF)](https://raw.githubusercontent.com/sam-illingworth/Integrity-Debt-Audit/main/examples/vulnerable-essay-brief.pdf) — a traditional assignment likely to score poorly
 - [Resilient assessment brief (PDF)](https://raw.githubusercontent.com/sam-illingworth/Integrity-Debt-Audit/main/examples/resilient-assessment-brief.pdf) — a redesigned assessment built to resist AI automation
 
-### Why use this audit?
+""")
 
-- **Stop chasing ghosts with AI detectors** – They don't work reliably, and students know how to evade them
+with st.expander("Why use this audit?"):
+    st.markdown("""- **Stop chasing ghosts with AI detectors** – They don't work reliably, and students know how to evade them
 - **Fix the curriculum, not the students** – High scores indicate structural problems with assessment design, not moral failures
 - **Protect institutional reputation** – Awarding degrees for AI-generated work threatens the value of your qualifications
-- **Design AI-resilient assessments** – Get specific, actionable feedback on how to rebuild assessment integrity
+- **Design AI-resilient assessments** – Get specific, actionable feedback on how to rebuild assessment integrity""")
 
-### Important: This is a screening tool
-
-**The browser view provides a preliminary triage only.** For the full diagnostic value, you must download the PDF report, which includes:
+with st.expander("Important: This is a screening tool"):
+    st.markdown("""**The browser view provides a preliminary triage only.** For the full diagnostic value, you must download the PDF report, which includes:
 - Detailed evidence quotes from your assessment that justify each score
-- Pedagogical critiques explaining *why* each category scored as it did  
+- Pedagogical critiques explaining *why* each category scored as it did
 - Reflective questions to guide curriculum redesign conversations
 - Strategic recommendations prioritised by impact
 
-Think of this screen as a medical triage; the PDF is the full diagnostic report you'd discuss with colleagues.
+Think of this screen as a medical triage; the PDF is the full diagnostic report you'd discuss with colleagues.""")
 
-### Need support with implementation?
-
-If your institution needs help interpreting results or redesigning high-stakes assessments, I offer bespoke consultancy.
+with st.expander("Need support with implementation?"):
+    st.markdown("""If your institution needs help interpreting results or redesigning high-stakes assessments, I offer bespoke consultancy.
 
 **Book a strategy call to plan your curriculum redesign:** [sam.illingworth@gmail.com](mailto:sam.illingworth@gmail.com)
 
-Join the Slow AI community for ongoing insights: [theslowai.substack.com](https://theslowai.substack.com)
-""")
+Join the Slow AI community for ongoing insights: [theslowai.substack.com](https://theslowai.substack.com)""")
 
 st.divider()
 
@@ -883,36 +881,32 @@ st.divider()
 if 'audit_complete' not in st.session_state:
     st.session_state.audit_complete = False
 
+submit_button = False
+
 with st.container():
     if not st.session_state.audit_complete:
-        # Move input type selector OUTSIDE the form so it updates immediately
-        st.subheader("2. Assessment Input")
         input_type = st.radio("Choose Input Method:", ["File Upload", "Paste Text or URL"])
-        
+
         with st.form("audit_form"):
-            st.subheader("1. Setup")
-            expectation = st.selectbox("Predicted Susceptibility:", ["Low", "Medium", "High"])
-            
-            st.markdown("---")  # Visual separator
-            
             uploaded_file = None
             raw_input = ""
-            
+
             if input_type == "File Upload":
                 uploaded_file = st.file_uploader("Upload Brief", type=["pdf", "docx"])
             else:  # Paste Text or URL
                 raw_input = st.text_area("Paste Assessment Brief or Public URL:", height=200, placeholder="Paste your assessment text here, or enter a URL to a public assessment page...")
-            
-            submit_button = st.form_submit_button("Generate Diagnostic Report")
+
+            submit_button = st.form_submit_button("Generate Audit Report")
     else:
         if st.button("Audit New Brief"):
             st.session_state.audit_complete = False
+            st.session_state.pop('pdf_bytes', None)
             st.rerun()
 
 # 5. Logic
 api_key = st.secrets.get("GEMINI_API_KEY")
 
-if not st.session_state.audit_complete and 'submit_button' in locals() and submit_button:
+if not st.session_state.audit_complete and submit_button:
     # Validation
     if not api_key:
         st.error("API key configuration missing. Please contact the administrator.")
@@ -1164,45 +1158,48 @@ if st.session_state.audit_complete:
         </p>
     """, unsafe_allow_html=True)
     
-    # Generate PDF
-    pdf = IntegrityPDF()
-    pdf.alias_nb_pages()
-    pdf.add_page()
-    pdf.add_summary(susceptibility.split('(')[0].strip(), total_score, imps, ctx)
-    
-    for cat_name, data in final_audit_results.items():
-        score = data['verified_score']
-        
-        # Get pedagogical context and improvement actions
-        pedagogical_context = PEDAGOGICAL_CONTEXT[cat_name]
-        actions = IMPROVEMENT_ACTIONS[cat_name]
-        
-        # Use enhanced method with theory and actions
-        pdf.add_category_deep_dive(
-            cat_name, 
-            score,
-            data['critique'], 
-            data['question'], 
-            data['quote'],
-            pedagogical_context,
-            actions
-        )
-    
-    # Add score interpretation with visual scale
-    pdf.add_score_interpretation(total_score)
-    
-    # Add action plan page
-    pdf.add_action_plan(final_audit_results)
-    
-    # Add next steps guidance
-    pdf.add_next_steps()
-    
-    # Add citation
-    pdf.add_citation_box()
-    
-    # Add contact box last
-    pdf.add_contact_box()
-    
+    # Generate PDF (cached to avoid regenerating on every Streamlit re-render)
+    if 'pdf_bytes' not in st.session_state:
+        pdf = IntegrityPDF()
+        pdf.alias_nb_pages()
+        pdf.add_page()
+        pdf.add_summary(susceptibility.split('(')[0].strip(), total_score, imps, ctx)
+
+        for cat_name, data in final_audit_results.items():
+            score = data['verified_score']
+
+            # Get pedagogical context and improvement actions
+            pedagogical_context = PEDAGOGICAL_CONTEXT[cat_name]
+            actions = IMPROVEMENT_ACTIONS[cat_name]
+
+            # Use enhanced method with theory and actions
+            pdf.add_category_deep_dive(
+                cat_name,
+                score,
+                data['critique'],
+                data['question'],
+                data['quote'],
+                pedagogical_context,
+                actions
+            )
+
+        # Add score interpretation with visual scale
+        pdf.add_score_interpretation(total_score)
+
+        # Add action plan page
+        pdf.add_action_plan(final_audit_results)
+
+        # Add next steps guidance
+        pdf.add_next_steps()
+
+        # Add citation
+        pdf.add_citation_box()
+
+        # Add contact box last
+        pdf.add_contact_box()
+
+        st.session_state.pdf_bytes = bytes(pdf.output())
+
     # Download button with custom styling - simple white/black
     st.markdown("""
         <style>
@@ -1223,10 +1220,10 @@ if st.session_state.audit_complete:
         }
         </style>
     """, unsafe_allow_html=True)
-    
+
     st.download_button(
-        "📥 Download Full Evidence Report (PDF)", 
-        data=bytes(pdf.output()), 
+        "📥 Download Full Evidence Report (PDF)",
+        data=st.session_state.pdf_bytes,
         file_name="Integrity_Debt_Audit.pdf",
         mime="application/pdf"
     )
