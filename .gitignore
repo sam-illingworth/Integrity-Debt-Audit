@@ -11,7 +11,11 @@ env/
 
 # Streamlit specific
 .streamlit/config.toml
+.streamlit/secrets.toml
 .streamlit/static/
+
+# Backup files
+*.backup
 
 # Operating system files
 .DS_Store
