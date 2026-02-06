@@ -823,7 +823,6 @@ CATEGORY_DESCRIPTIONS = {
 
 # 4. Interface
 st.title("Integrity Debt Audit")
-st.caption("🔒 Privacy Statement: This tool is stateless. Assessment briefs are processed in-memory.")
 
 st.markdown("""
 ### What is this tool?
@@ -1247,3 +1246,6 @@ if st.session_state.audit_complete:
     
     st.divider()
     st.caption("End of summary. For full pedagogical rationale and evidence quotes, please download the PDF report.")
+
+st.divider()
+st.caption("**Privacy:** This tool does not store your assessment brief or any personal data. Your text is sent to Google's Gemini AI for analysis and is then discarded. We do not keep copies. Google's own privacy policy applies to how they handle data during processing.")
