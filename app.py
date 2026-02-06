@@ -745,7 +745,7 @@ def scrape_url(url):
         if any(indicator in page_text_lower for indicator in login_indicators):
             is_vle = any(vle in page_text_lower for vle in vle_indicators)
             if is_vle:
-                return "Error: This appears to be a login-protected VLE page (Moodle, Canvas, Blackboard, etc.). The tool cannot access authenticated pages. Please copy the assessment text from your VLE and use 'Paste Text' instead."
+                return "Error: This appears to be a login-protected institutional page (Moodle, Canvas, Blackboard, SharePoint, etc.). The tool cannot access authenticated pages. Please copy the assessment text and use 'Paste Text' instead."
             else:
                 return "Error: This page appears to require login. The tool cannot access authenticated pages. Please copy the text manually and use 'Paste Text' instead."
 
@@ -833,7 +833,7 @@ This diagnostic evaluates your assessment brief across **10 evidence-based categ
 
 ### What do you need?
 
-Upload or paste an **assessment brief** from your course. The more detail the better: task description, learning outcomes, marking criteria, and submission requirements will all improve the accuracy of your results. You can upload a PDF, a Word document (.docx), paste text directly, or provide a public URL.
+Upload or paste an **assessment brief** from your course. The more detail the better: task description, learning outcomes, marking criteria, and submission requirements will all improve the accuracy of your results. You can upload a PDF, a Word document (.docx), paste text directly, or provide a public URL. If your brief is in PowerPoint or another format, export it as PDF first.
 
 **Want to try it first?** Download one of these example briefs:
 - [Vulnerable essay brief (PDF)](https://raw.githubusercontent.com/sam-illingworth/Integrity-Debt-Audit/main/examples/vulnerable-essay-brief.pdf) — a traditional assignment likely to score poorly
@@ -854,7 +854,9 @@ with st.expander("Important: This is a screening tool"):
 - Reflective questions to guide curriculum redesign conversations
 - Strategic recommendations prioritised by impact
 
-Think of this screen as a medical triage; the PDF is the full diagnostic report you'd discuss with colleagues.""")
+Think of this screen as a medical triage; the PDF is the full diagnostic report you'd discuss with colleagues.
+
+Scores may vary by 1-2 points between runs due to the nature of AI analysis. Focus on the overall pattern rather than exact numbers.""")
 
 with st.expander("Need support with implementation?"):
     st.markdown("""If your institution needs help interpreting results or redesigning high-stakes assessments, I offer bespoke consultancy.
@@ -903,6 +905,8 @@ if not st.session_state.audit_complete and submit_button:
         if input_type == "File Upload" and uploaded_file:
             final_text = extract_text(uploaded_file)
         elif raw_input:
+            if raw_input.strip().startswith("www."):
+                raw_input = "https://" + raw_input.strip()
             if raw_input.startswith("http"):
                 with st.spinner("Fetching URL content..."):
                     final_text = scrape_url(raw_input)
@@ -921,6 +925,11 @@ if not st.session_state.audit_complete and submit_button:
             if len(final_text) < 800:
                 word_count = len(final_text.split())
                 st.warning(f"Your assessment brief is quite short (~{word_count} words). Results may be more accurate with fuller details including assessment criteria, submission requirements, and any process elements (drafts, presentations, etc.).")
+
+            # Warn about long content being truncated
+            if len(final_text) > 8000:
+                word_count_total = len(final_text.split())
+                st.warning(f"Your document is approximately {word_count_total} words. Only the first ~3,000 words will be analysed. For best results, upload just the assessment brief rather than a full module handbook.")
 
             with st.spinner("Analyzing assessment against Integrity Debt framework..."):
                 try:
@@ -1209,10 +1218,14 @@ if st.session_state.audit_complete:
         </style>
     """, unsafe_allow_html=True)
 
+    # Create a clean filename from the document context
+    safe_ctx = re.sub(r'[^\w\s-]', '', ctx)[:40].strip().replace(' ', '_')
+    pdf_filename = f"Integrity_Debt_Audit_{safe_ctx}.pdf" if safe_ctx else "Integrity_Debt_Audit.pdf"
+
     st.download_button(
         "📥 Download Full Evidence Report (PDF)",
         data=st.session_state.pdf_bytes,
-        file_name="Integrity_Debt_Audit.pdf",
+        file_name=pdf_filename,
         mime="application/pdf"
     )
     
@@ -1228,6 +1241,7 @@ if st.session_state.audit_complete:
         label = "🟢" if score >= 4 else "🟡" if score == 3 else "🔴"
         
         with st.expander(f"{label} **{cat_name}** ({score}/5)"):
+            st.caption(CATEGORY_DESCRIPTIONS[cat_name])
             st.markdown(f"**Critique:** {data['critique']}")
             st.markdown(f"**Question for reflection:** {data['question']}")
             if data['quote'] != 'N/A':
