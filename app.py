@@ -672,9 +672,9 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.multi_cell(166, 6, 'Can your team tell human writing from AI? Ten quotes, five human, five machine. Most people score close to chance.')
         self.set_x(22)
-        self.set_font('helvetica', '', 10)
+        self.set_font('helvetica', 'U', 10)
         self.set_text_color(0, 0, 255)
-        self.cell(0, 6, 'samillingworth.itch.io/bot-or-not', 0, 1)
+        self.cell(0, 6, 'samillingworth.itch.io/bot-or-not', 0, 1, link='https://samillingworth.itch.io/bot-or-not')
         box_h = self.get_y() - box_y + 3
         self.rect(20, box_y, 170, box_h, 'D')
         self.set_y(box_y + box_h)
@@ -691,9 +691,9 @@ class IntegrityPDF(FPDF):
         self.set_text_color(*self.text_color_val)
         self.multi_cell(166, 6, 'Can your researchers spot a fabricated citation? Ten citations, five real, five AI-hallucinated. Teaches 12 verification methods.')
         self.set_x(22)
-        self.set_font('helvetica', '', 10)
+        self.set_font('helvetica', 'U', 10)
         self.set_text_color(0, 0, 255)
-        self.cell(0, 6, 'samillingworth.itch.io/dead-reference', 0, 1)
+        self.cell(0, 6, 'samillingworth.itch.io/dead-reference', 0, 1, link='https://samillingworth.itch.io/dead-reference')
         box_h = self.get_y() - box_y + 3
         self.rect(20, box_y, 170, box_h, 'D')
         self.set_y(box_y + box_h)
