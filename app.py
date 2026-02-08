@@ -646,6 +646,41 @@ class IntegrityPDF(FPDF):
         timeline = "Week 1: Implement one action from your top priority\nWeek 4: Review impact with students\nWeek 8: Implement second priority action\nEnd of semester: Re-audit and measure improvement"
         self.multi_cell(0, 6, timeline, 1, 'L', True)
         self.ln(8)
+    def add_ai_literacy_games(self):
+        """Link to Slow AI Games for team AI literacy testing"""
+        self.check_page_break(50)
+        self.ln(5)
+        self.set_font('helvetica', 'B', 11)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 8, 'Step 5: Test Your Team\'s AI Literacy', 0, 1)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        intro = "Before redesigning assessments, find out where your team\'s blind spots are. These two free games from Slow AI take five minutes each and work well as workshop warm-ups or staff development activities."
+        self.multi_cell(0, 6, intro)
+        self.ln(4)
+
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, 'Bot or Not (5 minutes)', 0, 1)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        self.multi_cell(0, 6, 'Can your team tell human writing from AI? Ten quotes, five human, five machine. Most people score close to chance.')
+        self.set_font('helvetica', 'U', 10)
+        self.set_text_color(0, 0, 255)
+        self.cell(0, 6, 'https://samillingworth.itch.io/bot-or-not', 0, 1)
+        self.ln(3)
+
+        self.set_font('helvetica', 'B', 10)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 6, 'Dead Reference (5 minutes)', 0, 1)
+        self.set_font('helvetica', '', 10)
+        self.set_text_color(*self.text_color_val)
+        self.multi_cell(0, 6, 'Can your researchers spot a fabricated citation? Ten citations, five real, five AI-hallucinated. Teaches 12 verification methods including DOI resolution, Crossref, and ORCID lookup.')
+        self.set_font('helvetica', 'U', 10)
+        self.set_text_color(0, 0, 255)
+        self.cell(0, 6, 'https://samillingworth.itch.io/dead-reference', 0, 1)
+        self.ln(8)
+
     def add_citation_box(self):
         """Academic citation - all in one box"""
         self.check_page_break(30)
@@ -1244,6 +1279,9 @@ if st.session_state.audit_complete:
 
         # Add next steps guidance
         pdf.add_next_steps()
+
+        # Add AI literacy games
+        pdf.add_ai_literacy_games()
 
         # Add citation
         pdf.add_citation_box()
