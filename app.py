@@ -648,7 +648,7 @@ class IntegrityPDF(FPDF):
         self.ln(8)
     def add_ai_literacy_games(self):
         """Link to Slow AI Games for team AI literacy testing"""
-        self.check_page_break(50)
+        self.check_page_break(80)
         self.ln(5)
         self.set_font('helvetica', 'B', 11)
         self.set_text_color(*self.primary_color)
@@ -659,26 +659,44 @@ class IntegrityPDF(FPDF):
         self.multi_cell(0, 6, intro)
         self.ln(4)
 
+        # Bot or Not box
+        box_y = self.get_y()
+        self.set_fill_color(*self.bg_cream)
+        self.set_draw_color(200, 200, 200)
+        self.set_xy(22, box_y + 3)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, 'Bot or Not (5 minutes)', 0, 1)
+        self.set_x(22)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
-        self.multi_cell(0, 6, 'Can your team tell human writing from AI? Ten quotes, five human, five machine. Most people score close to chance.')
-        self.set_font('helvetica', 'U', 10)
+        self.multi_cell(166, 6, 'Can your team tell human writing from AI? Ten quotes, five human, five machine. Most people score close to chance.')
+        self.set_x(22)
+        self.set_font('helvetica', '', 10)
         self.set_text_color(0, 0, 255)
-        self.cell(0, 6, 'https://samillingworth.itch.io/bot-or-not', 0, 1)
-        self.ln(3)
+        self.cell(0, 6, 'samillingworth.itch.io/bot-or-not', 0, 1)
+        box_h = self.get_y() - box_y + 3
+        self.rect(20, box_y, 170, box_h, 'D')
+        self.set_y(box_y + box_h)
+        self.ln(4)
 
+        # Dead Reference box
+        box_y = self.get_y()
+        self.set_xy(22, box_y + 3)
         self.set_font('helvetica', 'B', 10)
         self.set_text_color(*self.primary_color)
         self.cell(0, 6, 'Dead Reference (5 minutes)', 0, 1)
+        self.set_x(22)
         self.set_font('helvetica', '', 10)
         self.set_text_color(*self.text_color_val)
-        self.multi_cell(0, 6, 'Can your researchers spot a fabricated citation? Ten citations, five real, five AI-hallucinated. Teaches 12 verification methods including DOI resolution, Crossref, and ORCID lookup.')
-        self.set_font('helvetica', 'U', 10)
+        self.multi_cell(166, 6, 'Can your researchers spot a fabricated citation? Ten citations, five real, five AI-hallucinated. Teaches 12 verification methods.')
+        self.set_x(22)
+        self.set_font('helvetica', '', 10)
         self.set_text_color(0, 0, 255)
-        self.cell(0, 6, 'https://samillingworth.itch.io/dead-reference', 0, 1)
+        self.cell(0, 6, 'samillingworth.itch.io/dead-reference', 0, 1)
+        box_h = self.get_y() - box_y + 3
+        self.rect(20, box_y, 170, box_h, 'D')
+        self.set_y(box_y + box_h)
         self.ln(8)
 
     def add_citation_box(self):
