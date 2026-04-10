@@ -885,7 +885,7 @@ def discover_model(api_key):
         flash = [m for m in models if 'flash' in m.lower()]
         return flash[0] if flash else models[0]
     except Exception:
-        return 'models/gemini-2.0-flash'
+        return 'models/gemini-2.5-flash'
 
 # CORRECT CATEGORIES FROM THE PDF
 INTEGRITY_CATEGORIES = [
@@ -1044,7 +1044,7 @@ if not st.session_state.audit_complete and submit_button:
                 try:
                     genai.configure(api_key=api_key)
                     model = genai.GenerativeModel(
-                        'models/gemini-2.0-flash',
+                        'models/gemini-2.5-flash',
                         generation_config={"temperature": 0.1, "top_p": 0.2, "top_k": 2}
                     )
                     
