@@ -885,7 +885,7 @@ def discover_model(api_key):
         flash = [m for m in models if 'flash' in m.lower()]
         return flash[0] if flash else models[0]
     except Exception:
-        return 'models/gemini-1.5-flash'
+        return 'models/gemini-2.0-flash'
 
 # CORRECT CATEGORIES FROM THE PDF
 INTEGRITY_CATEGORIES = [
@@ -1139,6 +1139,7 @@ Return ONLY valid JSON with no additional text, markdown formatting, or preamble
                     
                 except Exception as e:
                     st.error("Audit failed. This may be due to API limits or connectivity issues. Please try again.")
+                    st.caption(f"Debug: {type(e).__name__}: {str(e)[:200]}")
 
 # Display results
 if st.session_state.audit_complete:
