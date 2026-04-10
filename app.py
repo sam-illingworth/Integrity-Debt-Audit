@@ -1042,9 +1042,9 @@ if not st.session_state.audit_complete and submit_button:
 
             with st.spinner("Analyzing assessment against Integrity Debt framework..."):
                 try:
-                    target = discover_model(api_key)
+                    genai.configure(api_key=api_key)
                     model = genai.GenerativeModel(
-                        target, 
+                        'models/gemini-2.0-flash',
                         generation_config={"temperature": 0.1, "top_p": 0.2, "top_k": 2}
                     )
                     
