@@ -1139,7 +1139,6 @@ Return ONLY valid JSON with no additional text, markdown formatting, or preamble
                     
                 except Exception as e:
                     st.error("Audit failed. This may be due to API limits or connectivity issues. Please try again.")
-                    st.caption(f"Debug: {type(e).__name__}: {str(e)[:200]}")
 
 # Display results
 if st.session_state.audit_complete:
